@@ -39,6 +39,30 @@ public class UserService {
         }
     }
 
+    public ResponseEntity login(String email, String password) {
+        // Retrieve user from the database based on the provided email
+        // You might need to implement a method to fetch user details from the database
+        System.out.println("Login attempt - Email: " + email + ", Password: " + password);
+
+        // For illustration purposes, let's assume you have a method like getUserByEmail
+        // Implement this method in your FirebaseService or another service class
+        CreateUserDTO user = firebaseService.getUserByEmail(email);
+
+        if (user != null) {
+            // Check if the provided password matches the stored hashed password
+            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+            if (passwordEncoder.matches(password, user.getHashedpassword())) {
+                System.out.println("Login successful");
+                return ResponseEntity.ok("Login successful");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+    }
+
+
     private String hashPassword(String password) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         return passwordEncoder.encode(password);

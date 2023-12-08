@@ -5,11 +5,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
     @Autowired
     UserService userService;
@@ -34,6 +36,12 @@ public class UserController {
         }
 
         return responseEntity;
+    }
+
+    @PostMapping("/user/login")
+    public ResponseEntity login(@RequestBody LoginDTO loginDTO) {
+        // Validate and process login
+        return userService.login(loginDTO.getEmail(), loginDTO.getHashedpassword());
     }
 }
 
