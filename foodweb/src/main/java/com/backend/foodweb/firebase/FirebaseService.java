@@ -9,12 +9,15 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class FirebaseService {
 
-    public void writeToFirebase(DataBaseReference dataBaseReference, String data,String UUID) {
+    public void writeToFirebase(DataBaseReference dataBaseReference, CreateUserDTO user) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference ref = database.getReference(dataBaseReference.toString());
 
-        ref.child(UUID).setValueAsync(data);
+        // Assuming user.getUUID() returns the UUID of the user
+        ref.child(user.getUUID()).setValueAsync(user);
     }
+
+
 
     public String readFromFirebase(DataBaseReference dataBaseReference, String UUID) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -54,20 +57,28 @@ public class FirebaseService {
         final CountDownLatch latch = new CountDownLatch(1);
         final CreateUserDTO[] result = new CreateUserDTO[1];
 
-        Query query = ref.orderByChild("email").equalTo(email);
+        // Convert the provided email to lowercase
+        String lowercaseEmail = email.toLowerCase();
+
+
+        Query query = ref.orderByChild("email").equalTo(lowercaseEmail);
+
+        System.out.println("Querying for email: " + lowercaseEmail);
 
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     result[0] = snapshot.getValue(CreateUserDTO.class);
-                    break; // Assuming email is unique, so we can break after the first match
+
+                    break;
                 }
                 latch.countDown();
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
+                System.err.println("Firebase query error: " + databaseError.getMessage());
                 latch.countDown();
             }
         });
@@ -78,8 +89,11 @@ public class FirebaseService {
             Thread.currentThread().interrupt();
         }
 
+        System.out.println("Retrieved user after latch: " + result[0]);
         return result[0];
     }
+
+
 
 }
 

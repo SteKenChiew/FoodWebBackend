@@ -16,7 +16,9 @@ public class CorsConfig {
         config.addAllowedOrigin("http://localhost:4200");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
+        config.addExposedHeader("Authorization"); // Allow access to Authorization header
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }
+

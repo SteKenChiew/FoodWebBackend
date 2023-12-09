@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
+
     @Autowired
     UserService userService;
 
@@ -26,13 +27,14 @@ public class UserController {
         // Generate JWT token and add it to the response if the user is created successfully
         if (responseEntity.getStatusCode().is2xxSuccessful()) {
             String token = jwtUtils.generateToken(createUserDTO.getUsername());
+            createUserDTO.setToken(token);  // Set token in the user DTO
 
             HttpHeaders headers = new HttpHeaders();
             headers.add("Authorization", "Bearer " + token);
 
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body(responseEntity.getBody());
+                    .body(createUserDTO);  // Include user DTO with token in the response body
         }
 
         return responseEntity;
@@ -41,7 +43,33 @@ public class UserController {
     @PostMapping("/user/login")
     public ResponseEntity login(@RequestBody LoginDTO loginDTO) {
         // Validate and process login
-        return userService.login(loginDTO.getEmail(), loginDTO.getHashedpassword());
+        ResponseEntity responseEntity = userService.login(loginDTO);
+
+        // If login is successful, generate JWT token and add it to the response
+        if (responseEntity.getStatusCode().is2xxSuccessful()) {
+            // Get the user details
+            CreateUserDTO userDTO = userService.getUserByEmail(loginDTO.getEmail());
+
+            // Generate JWT token
+            String token = jwtUtils.generateToken(userDTO.getUsername());
+
+            // Set token in the user DTO
+            userDTO.setToken(token);
+
+            // Add the token to the response headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + token);
+
+            // Add any other headers you need
+            headers.add("Access-Control-Expose-Headers", "Authorization");
+
+            // Return the response with headers and user DTO
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(userDTO);
+        }
+
+        return responseEntity;
     }
 }
 

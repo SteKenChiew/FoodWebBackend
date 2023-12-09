@@ -9,7 +9,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.RequestBody;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
+import java.security.Key;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -21,6 +27,21 @@ public class UserService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+
+    public String generateToken(String username) {
+        // Set the expiration time for the token (e.g., 1 hour)
+        long expirationTimeMillis = System.currentTimeMillis() + 3600000; // 1 hour
+
+        // Build the JWT token
+        String token = Jwts.builder()
+                .setSubject(username)
+                .setExpiration(new Date(expirationTimeMillis))
+                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .compact();
+
+        return token;
+    }
     public ResponseEntity createUser(CreateUserDTO createUserDTO) {
         try {
             UUID uuid = UUID.randomUUID();
@@ -29,8 +50,15 @@ public class UserService {
             String hashedPassword = hashPassword(createUserDTO.getHashedpassword());
             createUserDTO.setHashedpassword(hashedPassword);
 
+            // Generate and set the token (assuming you have a method to generate tokens)
+            String token = generateToken(createUserDTO.getUsername());
+            createUserDTO.setToken(token);
+
+            // Convert CreateUserDTO to JSON string
             String createUserString = objectMapper.writeValueAsString(createUserDTO);
-            firebaseService.writeToFirebase(DataBaseReference.USER, createUserString, uuid.toString());
+
+            // Write to Firebase
+            firebaseService.writeToFirebase(DataBaseReference.USER, createUserDTO);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createUserDTO);
         } catch (JsonProcessingException e) {
@@ -39,30 +67,49 @@ public class UserService {
         }
     }
 
-    public ResponseEntity login(String email, String password) {
+    public ResponseEntity login(LoginDTO loginDTO) {
         // Retrieve user from the database based on the provided email
-        // You might need to implement a method to fetch user details from the database
-        System.out.println("Login attempt - Email: " + email + ", Password: " + password);
+        System.out.println("Login attempt - Email: " + loginDTO.getEmail() + ", Password: " + loginDTO.getHashedpassword());
 
-        // For illustration purposes, let's assume you have a method like getUserByEmail
-        // Implement this method in your FirebaseService or another service class
-        CreateUserDTO user = firebaseService.getUserByEmail(email);
+        // Retrieve user details
+        CreateUserDTO user = firebaseService.getUserByEmail(loginDTO.getEmail());
+        System.out.println("Retrieved user: " + user);
 
+        // Check if the user is found
         if (user != null) {
+            System.out.println("Retrieved user: " + user);
+            System.out.println("Provided hashed password: " + loginDTO.getHashedpassword());
+            System.out.println("Stored hashed password: " + user.getHashedpassword());
+
+            // Check if the stored hashed password is empty or null
+            String storedHashedPassword = user.getHashedpassword();
+            if (storedHashedPassword == null || storedHashedPassword.isEmpty()) {
+                System.out.println("Stored hashed password is empty or null");
+                // Handle this case as needed (return an error or handle it appropriately)
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Invalid user data");
+            }
+
             // Check if the provided password matches the stored hashed password
             BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-            if (passwordEncoder.matches(password, user.getHashedpassword())) {
+            if (passwordEncoder.matches(loginDTO.getHashedpassword(), storedHashedPassword)) {
                 System.out.println("Login successful");
                 return ResponseEntity.ok("Login successful");
             } else {
+                System.out.println("Invalid password");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
             }
         } else {
+            System.out.println("User not found");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
     }
 
 
+
+    public CreateUserDTO getUserByEmail(String email) {
+        System.out.println("Getting user by email: " + email);
+        return firebaseService.getUserByEmail(email);
+    }
     private String hashPassword(String password) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         return passwordEncoder.encode(password);
