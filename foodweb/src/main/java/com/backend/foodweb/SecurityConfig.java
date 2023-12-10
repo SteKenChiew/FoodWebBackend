@@ -27,7 +27,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
                 .antMatchers("/user/create").permitAll()  // Allow registration
-                .antMatchers("/user/login").permitAll()   // Allow login
+                .antMatchers("/user/login").permitAll() // Allow login
+                .antMatchers("/merchant/create").permitAll()// Allow registration
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable();

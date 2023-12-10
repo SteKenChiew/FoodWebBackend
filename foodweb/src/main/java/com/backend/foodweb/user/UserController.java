@@ -1,6 +1,7 @@
 package com.backend.foodweb.user;
 
 import com.backend.foodweb.JwtUtils;
+import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -71,5 +72,30 @@ public class UserController {
 
         return responseEntity;
     }
+
+
+    @PostMapping("/merchant/create")
+    public ResponseEntity createMerchant(@RequestBody CreateMerchantDTO merchantDTO) {
+
+        ResponseEntity responseEntity = userService.createMerchant(merchantDTO);
+
+        // Generate JWT token and add it to the response if the merchant is created successfully
+        if (responseEntity.getStatusCode().is2xxSuccessful()) {
+            String token = jwtUtils.generateToken(merchantDTO.getMerchantName());
+            merchantDTO.setToken(token);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + token);
+            System.out.println("Received request to create merchant: " + merchantDTO);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(merchantDTO);
+        }
+
+        return responseEntity;
+    }
+
+
 }
 

@@ -1,9 +1,11 @@
 package com.backend.foodweb.firebase;
 
+import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.google.firebase.database.*;
 import org.springframework.stereotype.Service;
 import com.backend.foodweb.user.CreateUserDTO;
 
+import java.lang.reflect.Array;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 @Service
@@ -17,7 +19,13 @@ public class FirebaseService {
         ref.child(user.getUUID()).setValueAsync(user);
     }
 
+    public void writeToFirebaseMerchant(DataBaseReference dataBaseReference, CreateMerchantDTO merchant) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(dataBaseReference.toString());
 
+        // Assuming merchant.getUUID() returns the UUID of the merchant
+        ref.child(merchant.getUUID()).setValueAsync(merchant);
+    }
 
     public String readFromFirebase(DataBaseReference dataBaseReference, String UUID) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -50,17 +58,14 @@ public class FirebaseService {
         return result[0];
     }
 
-    public CreateUserDTO getUserByEmail(String email) {
+    public <T> T getObjectByEmail(String email, DataBaseReference dataBaseReference, Class<T> valueType) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference ref = database.getReference(DataBaseReference.USER.toString());
+        DatabaseReference ref = database.getReference(dataBaseReference.toString());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final CreateUserDTO[] result = new CreateUserDTO[1];
+        final T[] result = (T[]) Array.newInstance(valueType, 1);
 
-        // Convert the provided email to lowercase
         String lowercaseEmail = email.toLowerCase();
-
-
         Query query = ref.orderByChild("email").equalTo(lowercaseEmail);
 
         System.out.println("Querying for email: " + lowercaseEmail);
@@ -69,8 +74,7 @@ public class FirebaseService {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    result[0] = snapshot.getValue(CreateUserDTO.class);
-
+                    result[0] = snapshot.getValue(valueType);
                     break;
                 }
                 latch.countDown();
@@ -78,7 +82,7 @@ public class FirebaseService {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                System.err.println("Firebase query error: " + databaseError.getMessage());
+                System.err.println("Firebase query error for email " + lowercaseEmail + ": " + databaseError.getMessage());
                 latch.countDown();
             }
         });
@@ -89,7 +93,7 @@ public class FirebaseService {
             Thread.currentThread().interrupt();
         }
 
-        System.out.println("Retrieved user after latch: " + result[0]);
+        System.out.println("Retrieved object after latch: " + result[0]);
         return result[0];
     }
 

@@ -2,6 +2,7 @@ package com.backend.foodweb.user;
 
 import com.backend.foodweb.firebase.DataBaseReference;
 import com.backend.foodweb.firebase.FirebaseService;
+import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +73,7 @@ public class UserService {
         System.out.println("Login attempt - Email: " + loginDTO.getEmail() + ", Password: " + loginDTO.getHashedpassword());
 
         // Retrieve user details
-        CreateUserDTO user = firebaseService.getUserByEmail(loginDTO.getEmail());
+        CreateUserDTO user = getUserByEmail(loginDTO.getEmail());
         System.out.println("Retrieved user: " + user);
 
         // Check if the user is found
@@ -107,11 +108,41 @@ public class UserService {
 
 
     public CreateUserDTO getUserByEmail(String email) {
-        System.out.println("Getting user by email: " + email);
-        return firebaseService.getUserByEmail(email);
+        return firebaseService.getObjectByEmail(email, DataBaseReference.USER, CreateUserDTO.class);
     }
+
+    public CreateMerchantDTO getMerchantByEmail(String email) {
+        return firebaseService.getObjectByEmail(email, DataBaseReference.MERCHANT, CreateMerchantDTO.class);
+    }
+
     private String hashPassword(String password) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         return passwordEncoder.encode(password);
     }
+
+    public ResponseEntity createMerchant(CreateMerchantDTO merchantDTO) {
+        try {
+            UUID uuid = UUID.randomUUID();
+            merchantDTO.setUUID(uuid.toString());
+
+            String hashedPassword = hashPassword(merchantDTO.getHashedpassword());
+            merchantDTO.setHashedpassword(hashedPassword);
+
+
+            String token = generateToken(merchantDTO.getMerchantName());
+            merchantDTO.setToken(token);
+            // Convert MerchantDTO to JSON string
+            String createMerchantString = objectMapper.writeValueAsString(merchantDTO);
+
+            // Write to Firebase
+            firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchantDTO);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(merchantDTO);
+        } catch (JsonProcessingException e) {
+            // Handle the exception appropriately
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
 }
