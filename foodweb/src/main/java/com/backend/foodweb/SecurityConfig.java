@@ -28,7 +28,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/user/create").permitAll()  // Allow registration
                 .antMatchers("/user/login").permitAll() // Allow login
-                .antMatchers("/merchant/create").permitAll()// Allow registration
+                .antMatchers("/merchant/create").permitAll()
+                .antMatchers("/merchant/login").permitAll()// Allow registration
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable();

@@ -24,7 +24,14 @@ public class FirebaseService {
         DatabaseReference ref = database.getReference(dataBaseReference.toString());
 
         // Assuming merchant.getUUID() returns the UUID of the merchant
-        ref.child(merchant.getUUID()).setValueAsync(merchant);
+        DatabaseReference merchantRef = ref.child(merchant.getUUID());
+
+        // Add the entire merchant object as a child node
+        merchantRef.setValueAsync(merchant);
+
+        // Push a new child node under the merchant's UUID for the foodItems
+        DatabaseReference foodItemsRef = merchantRef.child("foodItems").push();
+        foodItemsRef.setValueAsync(merchant.getFoodItems());
     }
 
     public String readFromFirebase(DataBaseReference dataBaseReference, String UUID) {
@@ -66,16 +73,22 @@ public class FirebaseService {
         final T[] result = (T[]) Array.newInstance(valueType, 1);
 
         String lowercaseEmail = email.toLowerCase();
-        Query query = ref.orderByChild("email").equalTo(lowercaseEmail);
+        Query query = ref.orderByChild("email");
 
         System.out.println("Querying for email: " + lowercaseEmail);
 
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    result[0] = snapshot.getValue(valueType);
-                    break;
+                System.out.println("Direct onDataChange invocation: " + dataSnapshot.getValue());
+                System.out.println("Snapshot details: " + dataSnapshot);
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        result[0] = snapshot.getValue(valueType);
+                        break;
+                    }
+                } else {
+                    System.out.println("No data found for email: " + lowercaseEmail);
                 }
                 latch.countDown();
             }
@@ -83,12 +96,14 @@ public class FirebaseService {
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 System.err.println("Firebase query error for email " + lowercaseEmail + ": " + databaseError.getMessage());
-                latch.countDown();
+                latch.countDown();  // Ensure the latch countdown even in case of an error
             }
         });
 
         try {
-            latch.await(10, TimeUnit.SECONDS);
+            if (!latch.await(10, TimeUnit.SECONDS)) {
+                System.err.println("Timeout waiting for Firebase query for email " + lowercaseEmail);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

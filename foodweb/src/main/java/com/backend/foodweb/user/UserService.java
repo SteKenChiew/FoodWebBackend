@@ -3,6 +3,8 @@ package com.backend.foodweb.user;
 import com.backend.foodweb.firebase.DataBaseReference;
 import com.backend.foodweb.firebase.FirebaseService;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
+import com.backend.foodweb.merchant.FoodItemDTO;
+import com.backend.foodweb.merchant.MerchantLoginDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +18,9 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -68,43 +72,45 @@ public class UserService {
         }
     }
 
+
+
     public ResponseEntity login(LoginDTO loginDTO) {
-        // Retrieve user from the database based on the provided email
+        // Retrieve user or merchant from the database based on the provided email
         System.out.println("Login attempt - Email: " + loginDTO.getEmail() + ", Password: " + loginDTO.getHashedpassword());
 
         // Retrieve user details
         CreateUserDTO user = getUserByEmail(loginDTO.getEmail());
-        System.out.println("Retrieved user: " + user);
 
-        // Check if the user is found
+        // Retrieve merchant details
+        CreateMerchantDTO merchant = getMerchantByEmail(loginDTO.getEmail());
+        System.out.println("Retrieved merchant: " + merchant);
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        // Check if either user or merchant is found
         if (user != null) {
-            System.out.println("Retrieved user: " + user);
-            System.out.println("Provided hashed password: " + loginDTO.getHashedpassword());
-            System.out.println("Stored hashed password: " + user.getHashedpassword());
-
-            // Check if the stored hashed password is empty or null
-            String storedHashedPassword = user.getHashedpassword();
-            if (storedHashedPassword == null || storedHashedPassword.isEmpty()) {
-                System.out.println("Stored hashed password is empty or null");
-                // Handle this case as needed (return an error or handle it appropriately)
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Invalid user data");
-            }
-
-            // Check if the provided password matches the stored hashed password
-            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-            if (passwordEncoder.matches(loginDTO.getHashedpassword(), storedHashedPassword)) {
-                System.out.println("Login successful");
-                return ResponseEntity.ok("Login successful");
+            // Check if the provided password matches the stored hashed password for the user
+            if (passwordEncoder.matches(loginDTO.getHashedpassword(), user.getHashedpassword())) {
+                System.out.println("User Login successful");
+                // Redirect to user page
+                return ResponseEntity.ok("User Login successful - Redirect to user page");
             } else {
-                System.out.println("Invalid password");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
+                System.out.println("Invalid password for user");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password for user");
+            }
+        } else if (merchant != null) {
+            // Check if the provided password matches the stored hashed password for the merchant
+            if (passwordEncoder.matches(loginDTO.getHashedpassword(), merchant.getHashedpassword())) {
+                System.out.println("Merchant Login successful");
+                // Redirect to merchant page
+                return ResponseEntity.ok("Merchant Login successful - Redirect to merchant page");
+            } else {
+                System.out.println("Invalid password for merchant");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password for merchant");
             }
         } else {
-            System.out.println("User not found");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            System.out.println("User or Merchant not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User or Merchant not found");
         }
     }
-
 
 
     public CreateUserDTO getUserByEmail(String email) {
@@ -112,7 +118,11 @@ public class UserService {
     }
 
     public CreateMerchantDTO getMerchantByEmail(String email) {
-        return firebaseService.getObjectByEmail(email, DataBaseReference.MERCHANT, CreateMerchantDTO.class);
+        System.out.println("Querying for email: " + email);
+
+        CreateMerchantDTO merchant = firebaseService.getObjectByEmail(email, DataBaseReference.MERCHANT, CreateMerchantDTO.class);
+        System.out.println("Retrieved merchant after latch: " + merchant);
+        return merchant;
     }
 
     private String hashPassword(String password) {
@@ -128,11 +138,14 @@ public class UserService {
             String hashedPassword = hashPassword(merchantDTO.getHashedpassword());
             merchantDTO.setHashedpassword(hashedPassword);
 
-
             String token = generateToken(merchantDTO.getMerchantName());
             merchantDTO.setToken(token);
+
+
             // Convert MerchantDTO to JSON string
             String createMerchantString = objectMapper.writeValueAsString(merchantDTO);
+
+            System.out.println("MerchantDTO before writing to the database: " + merchantDTO);
 
             // Write to Firebase
             firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchantDTO);
@@ -141,6 +154,29 @@ public class UserService {
         } catch (JsonProcessingException e) {
             // Handle the exception appropriately
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
+    public ResponseEntity merchantLogin(MerchantLoginDTO merchantLoginDTO) {
+        // Retrieve merchant details
+        CreateMerchantDTO merchant = getMerchantByEmail(merchantLoginDTO.getEmail());
+
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+        // Check if the merchant is found
+        if (merchant != null) {
+            // Check if the provided password matches the stored hashed password for the merchant
+            if (passwordEncoder.matches(merchantLoginDTO.getHashedpassword(), merchant.getHashedpassword())) {
+                // Merchant Login successful
+                return ResponseEntity.ok("Merchant Login successful - Redirect to merchant page");
+            } else {
+                // Invalid password for merchant
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password for merchant");
+            }
+        } else {
+            // Merchant not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Merchant not found");
         }
     }
 

@@ -2,6 +2,8 @@ package com.backend.foodweb.user;
 
 import com.backend.foodweb.JwtUtils;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
+import com.backend.foodweb.merchant.FoodItemDTO;
+import com.backend.foodweb.merchant.MerchantLoginDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -78,7 +82,7 @@ public class UserController {
     public ResponseEntity createMerchant(@RequestBody CreateMerchantDTO merchantDTO) {
 
         ResponseEntity responseEntity = userService.createMerchant(merchantDTO);
-
+        List<FoodItemDTO> foodItems = merchantDTO.getFoodItems();
         // Generate JWT token and add it to the response if the merchant is created successfully
         if (responseEntity.getStatusCode().is2xxSuccessful()) {
             String token = jwtUtils.generateToken(merchantDTO.getMerchantName());
@@ -96,6 +100,37 @@ public class UserController {
         return responseEntity;
     }
 
+    @PostMapping("/merchant/login")
+    public ResponseEntity merchantLogin(@RequestBody MerchantLoginDTO merchantLoginDTO) {
+        System.out.println("Login attempt - Email: " + merchantLoginDTO.getEmail() + ", Password: " + merchantLoginDTO.getHashedpassword());
 
+        ResponseEntity responseEntity = userService.merchantLogin(merchantLoginDTO);
+
+        // If login is successful, generate JWT token and add it to the response
+        if (responseEntity.getStatusCode().is2xxSuccessful()) {
+            // Get the merchant details
+            CreateMerchantDTO merchantDTO = userService.getMerchantByEmail(merchantLoginDTO.getEmail());
+
+            // Generate JWT token
+            String token = jwtUtils.generateToken(merchantDTO.getMerchantName());
+
+            // Set token in the merchant DTO
+            merchantDTO.setToken(token);
+
+            // Add the token to the response headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + token);
+
+            // Add any other headers you need
+            headers.add("Access-Control-Expose-Headers", "Authorization");
+
+            // Return the response with headers and merchant DTO
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(merchantDTO);
+        }
+
+        return responseEntity;
+    }
 }
 

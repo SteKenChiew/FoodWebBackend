@@ -1,6 +1,9 @@
 package com.backend.foodweb.merchant;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 public class CreateMerchantDTO {
 
@@ -11,6 +14,8 @@ public class CreateMerchantDTO {
     private String merchantType;
     private String token;
     private String UUID;
-
-    public CreateMerchantDTO() {}
+    private List<FoodItemDTO> foodItems;
+    public CreateMerchantDTO() {
+        this.foodItems = new ArrayList<>();
+    }
 }
