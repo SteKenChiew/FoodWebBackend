@@ -1,11 +1,13 @@
 package com.backend.foodweb.firebase;
 
 import com.backend.foodweb.merchant.CreateMerchantDTO;
+import com.backend.foodweb.merchant.FoodItemDTO;
 import com.google.firebase.database.*;
 import org.springframework.stereotype.Service;
 import com.backend.foodweb.user.CreateUserDTO;
 
 import java.lang.reflect.Array;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 @Service
@@ -29,10 +31,12 @@ public class FirebaseService {
         // Add the entire merchant object as a child node
         merchantRef.setValueAsync(merchant);
 
-        // Push a new child node under the merchant's UUID for the foodItems
-        DatabaseReference foodItemsRef = merchantRef.child("foodItems").push();
+        // Set the entire list of food items under the merchant's UUID for the foodItems
+        DatabaseReference foodItemsRef = merchantRef.child("foodItems");
         foodItemsRef.setValueAsync(merchant.getFoodItems());
     }
+
+
 
     public String readFromFirebase(DataBaseReference dataBaseReference, String UUID) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();

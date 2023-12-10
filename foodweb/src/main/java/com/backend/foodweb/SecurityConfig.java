@@ -29,7 +29,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/user/create").permitAll()  // Allow registration
                 .antMatchers("/user/login").permitAll() // Allow login
                 .antMatchers("/merchant/create").permitAll()
-                .antMatchers("/merchant/login").permitAll()// Allow registration
+                .antMatchers("/merchant/login").permitAll()
+                .antMatchers("/merchant/add-item").permitAll()
+                .antMatchers("/merchant/get-food-items").permitAll()// Allow registration
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable();
