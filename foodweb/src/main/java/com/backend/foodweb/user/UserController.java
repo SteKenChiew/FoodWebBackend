@@ -154,6 +154,9 @@ public class UserController {
                 merchant.setFoodItems(new ArrayList<>());
             }
 
+            // Set the itemID for the new food item
+            foodItemDTO.setItemID(getNextItemID(merchant.getFoodItems()));
+
             // Add the new food item to the merchant's foodItems list
             merchant.getFoodItems().add(foodItemDTO);
 
@@ -166,6 +169,13 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    // Helper method to get the next available itemID
+    private int getNextItemID(List<FoodItemDTO> foodItems) {
+        int maxID = foodItems.stream().mapToInt(FoodItemDTO::getItemID).max().orElse(0);
+        return maxID + 1;
+    }
+
 
     @GetMapping("/merchant/get-food-items")
     public ResponseEntity<List<FoodItemDTO>> getFoodItems(@RequestParam String merchantEmail) {
@@ -187,6 +197,59 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
+    @PutMapping("/merchant/update-food-item")
+    public ResponseEntity<?> updateFoodItem(@RequestBody FoodItemDTO updatedFoodItem,
+                                            @RequestParam String merchantEmail,
+                                            @RequestParam int itemID) {
+        try {
+            // Retrieve the merchant by email
+            CreateMerchantDTO merchant = userService.getMerchantByEmail(merchantEmail);
+
+            // Check if the merchant exists
+            if (merchant == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Merchant not found");
+            }
+
+            // Ensure that foodItems is initialized as a List
+            if (merchant.getFoodItems() == null) {
+                merchant.setFoodItems(new ArrayList<>());
+            }
+
+            // Find the index of the food item to be updated based on its itemID
+            int index = findFoodItemIndexByItemID(merchant.getFoodItems(), itemID);
+
+            // If the food item is not found, return a not found response
+            if (index == -1) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Food item not found");
+            }
+
+            // Update the food item at the found index
+            merchant.getFoodItems().set(index, updatedFoodItem);
+
+            // Update the merchant in the database
+            firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchant);
+
+            return ResponseEntity.ok(merchant);
+        } catch (Exception e) {
+            // Log the exception for debugging purposes
+            e.printStackTrace();
+            // Handle the exception appropriately and provide a meaningful response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
+    // Helper method to find the index of a food item in the list based on its itemID
+    private int findFoodItemIndexByItemID(List<FoodItemDTO> foodItems, int itemID) {
+        for (int i = 0; i < foodItems.size(); i++) {
+            if (foodItems.get(i).getItemID() == itemID) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 
 }
 

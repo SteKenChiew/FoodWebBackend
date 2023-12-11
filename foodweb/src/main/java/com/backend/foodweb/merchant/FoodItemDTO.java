@@ -3,7 +3,7 @@ import com.google.type.Decimal;
 import lombok.Data;
 @Data
 public class FoodItemDTO {
-
+    private int itemID;
     private String itemName;
     private String itemImg;
     private Double itemPrice;
