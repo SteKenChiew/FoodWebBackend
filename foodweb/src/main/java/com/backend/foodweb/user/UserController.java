@@ -250,6 +250,18 @@ public class UserController {
         return -1;
     }
 
+    @GetMapping("/restaurants")
+    public ResponseEntity<List<CreateMerchantDTO>> getRestaurants() {
+        try {
+            // Retrieve the list of restaurants from Firebase
+            List<CreateMerchantDTO> restaurants = firebaseService.getMerchantsFromFirebase();
+
+            return ResponseEntity.ok(restaurants);
+        } catch (Exception e) {
+            // Handle the exception appropriately
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
 }
 

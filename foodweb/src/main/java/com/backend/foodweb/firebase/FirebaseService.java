@@ -5,8 +5,10 @@ import com.backend.foodweb.merchant.FoodItemDTO;
 import com.google.firebase.database.*;
 import org.springframework.stereotype.Service;
 import com.backend.foodweb.user.CreateUserDTO;
-
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -86,10 +88,41 @@ public class FirebaseService {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 System.out.println("Direct onDataChange invocation: " + dataSnapshot.getValue());
                 System.out.println("Snapshot details: " + dataSnapshot);
+
                 if (dataSnapshot.exists()) {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        result[0] = snapshot.getValue(valueType);
-                        break;
+                        String retrievedEmail = null;
+
+                        if (snapshot.hasChild("email")) {
+                            retrievedEmail = snapshot.child("email").getValue(String.class);
+                        } else if (snapshot.hasChild("merchantEmail")) {
+                            retrievedEmail = snapshot.child("merchantEmail").getValue(String.class);
+                        }
+
+                        if (retrievedEmail != null && retrievedEmail.trim().equalsIgnoreCase(lowercaseEmail.trim())) {
+                            T retrievedObject = snapshot.getValue(valueType);
+
+                            // Modify the retrieved object if needed
+                            if (retrievedObject instanceof CreateUserDTO) {
+                                CreateUserDTO modifiedUser = (CreateUserDTO) retrievedObject;
+                                modifiedUser.setToken("New User Token");
+                                // You can make other modifications for CreateUserDTO
+                            } else if (retrievedObject instanceof CreateMerchantDTO) {
+                                CreateMerchantDTO modifiedMerchant = (CreateMerchantDTO) retrievedObject;
+                                modifiedMerchant.setToken("New Merchant Token");
+                                // You can make other modifications for MerchantDTO
+                            }
+
+                            result[0] = retrievedObject;
+
+                            // Add the following lines to log the retrieved email and object
+                            System.out.println("Retrieved email from snapshot: " + retrievedEmail);
+                            System.out.println("Retrieved object after email match: " + result[0]);
+
+                            break;  // Break the loop once the correct object is found
+                        } else {
+                            System.out.println("Email does not match: " + retrievedEmail);
+                        }
                     }
                 } else {
                     System.out.println("No data found for email: " + lowercaseEmail);
@@ -104,6 +137,8 @@ public class FirebaseService {
             }
         });
 
+
+
         try {
             if (!latch.await(10, TimeUnit.SECONDS)) {
                 System.err.println("Timeout waiting for Firebase query for email " + lowercaseEmail);
@@ -115,9 +150,49 @@ public class FirebaseService {
         System.out.println("Retrieved object after latch: " + result[0]);
         return result[0];
     }
+    public List<CreateMerchantDTO> getMerchantsFromFirebase() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(DataBaseReference.MERCHANT.toString());
 
+        final CountDownLatch latch = new CountDownLatch(1);
+        final List<CreateMerchantDTO> merchants = new ArrayList<>();
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot merchantSnapshot : dataSnapshot.getChildren()) {
+                        CreateMerchantDTO merchant = merchantSnapshot.getValue(CreateMerchantDTO.class);
+
+                        if (merchant != null) {
+                            merchants.add(merchant);
+                        }
+                    }
+                }
+
+                latch.countDown();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.err.println("Firebase query error: " + databaseError.getMessage());
+                latch.countDown();
+            }
+        });
+
+        try {
+            if (!latch.await(10, TimeUnit.SECONDS)) {
+                System.err.println("Timeout waiting for Firebase query");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        return merchants;
+    }
 
 
 }
+
 
 

@@ -75,42 +75,30 @@ public class UserService {
 
 
     public ResponseEntity login(LoginDTO loginDTO) {
-        // Retrieve user or merchant from the database based on the provided email
         System.out.println("Login attempt - Email: " + loginDTO.getEmail() + ", Password: " + loginDTO.getHashedpassword());
 
-        // Retrieve user details
         CreateUserDTO user = getUserByEmail(loginDTO.getEmail());
 
-        // Retrieve merchant details
-        CreateMerchantDTO merchant = getMerchantByEmail(loginDTO.getEmail());
-        System.out.println("Retrieved merchant: " + merchant);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        // Check if either user or merchant is found
+
         if (user != null) {
-            // Check if the provided password matches the stored hashed password for the user
+            System.out.println("Provided hashed password: " + loginDTO.getHashedpassword());
+            System.out.println("Stored hashed password: " + user.getHashedpassword());
+
             if (passwordEncoder.matches(loginDTO.getHashedpassword(), user.getHashedpassword())) {
-                System.out.println("User Login successful");
-                // Redirect to user page
-                return ResponseEntity.ok("User Login successful - Redirect to user page");
+                System.out.println("Password matches");
+                return ResponseEntity.ok(user);
             } else {
-                System.out.println("Invalid password for user");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password for user");
-            }
-        } else if (merchant != null) {
-            // Check if the provided password matches the stored hashed password for the merchant
-            if (passwordEncoder.matches(loginDTO.getHashedpassword(), merchant.getHashedpassword())) {
-                System.out.println("Merchant Login successful");
-                // Redirect to merchant page
-                return ResponseEntity.ok("Merchant Login successful - Redirect to merchant page");
-            } else {
-                System.out.println("Invalid password for merchant");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password for merchant");
+                System.out.println("Password does not match");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
             }
         } else {
-            System.out.println("User or Merchant not found");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User or Merchant not found");
+            System.out.println("User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
     }
+
+
 
 
     public CreateUserDTO getUserByEmail(String email) {

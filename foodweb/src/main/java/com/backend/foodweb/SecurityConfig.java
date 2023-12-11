@@ -34,7 +34,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/merchant/login").permitAll()  // Allow login
                 .antMatchers("/merchant/add-item").permitAll()  // Allow additem
                 .antMatchers("/merchant/get-food-items").permitAll()  // Allow get item
-                .antMatchers("/merchant/update-food-item").permitAll()  // Allow update item
+                .antMatchers("/merchant/update-food-item").permitAll()// Allow update item
+                .antMatchers("/restaurants").permitAll()// Allow get restaurant
+
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable()
