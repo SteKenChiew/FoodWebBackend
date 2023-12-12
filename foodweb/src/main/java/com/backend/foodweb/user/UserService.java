@@ -20,6 +20,11 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.*;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Service
 public class UserService {
 
@@ -183,6 +188,40 @@ public class UserService {
                 throw new RuntimeException("Error fetching merchant by UUID", e);
             }
         }
+
+    public ResponseEntity<Map<String, String>> uploadImage(MultipartFile file) {
+        try {
+            // Specify the path where you want to save the uploaded images
+            String uploadDir = "C:\\GitHub\\FoodWeb\\src\\assets\\img";
+            Path uploadPath = Paths.get(uploadDir);
+
+            // If the directory doesn't exist, create it
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Get the original filename
+            String originalFileName = file.getOriginalFilename();
+
+            // Build the path where the file will be saved
+            Path filePath = uploadPath.resolve(originalFileName);
+
+            // Save the file to the specified path
+            Files.write(filePath, file.getBytes());
+
+            // Construct a JSON response with the file path
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "File uploaded successfully");
+            response.put("path", filePath.toString());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Handle the exception appropriately (e.g., log it or return an error response)
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "File upload failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
     }
 
 
