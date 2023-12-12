@@ -30,6 +30,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/user/create").permitAll()  // Allow registration
                 .antMatchers("/user/login").permitAll() // Allow login
+                .antMatchers("/user/cart").permitAll()
+                .antMatchers("/user/cart/add").permitAll()// Allow login
+                .antMatchers("/user/cart/items").permitAll()
                 .antMatchers("/merchant/create").permitAll()  // Allow registration
                 .antMatchers("/merchant/login").permitAll()  // Allow login
                 .antMatchers("/merchant/add-item").permitAll()  // Allow additem
@@ -37,7 +40,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/merchant/update-food-item").permitAll()// Allow update item
                 .antMatchers("/restaurants").permitAll()
                 .antMatchers("/restaurants/{uuid}").permitAll()// Allow get restaurant
-
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable()

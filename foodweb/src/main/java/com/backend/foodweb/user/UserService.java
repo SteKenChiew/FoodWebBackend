@@ -1,5 +1,6 @@
 package com.backend.foodweb.user;
 
+import com.backend.foodweb.cart.CartItemDTO;
 import com.backend.foodweb.firebase.DataBaseReference;
 import com.backend.foodweb.firebase.FirebaseService;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
@@ -7,6 +8,7 @@ import com.backend.foodweb.merchant.FoodItemDTO;
 import com.backend.foodweb.merchant.MerchantLoginDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.gax.rpc.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -183,7 +185,33 @@ public class UserService {
                 throw new RuntimeException("Error fetching merchant by UUID", e);
             }
         }
+
+    public ResponseEntity addToCart(String userId, FoodItemDTO foodItem, int quantity) {
+        CreateUserDTO userDTO = getUserById(userId);
+
+        if (userDTO == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        // Update the user's cart
+        CartItemDTO cartItem = new CartItemDTO();
+        cartItem.setFoodItem(foodItem);
+        cartItem.setQuantity(quantity);
+
+        userDTO.getCart().getCartItems().add(cartItem);
+
+        // Save the updated userDTO back to the database
+        firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
+
+        return ResponseEntity.ok("Item added to cart successfully");
     }
+
+    public CreateUserDTO getUserById(String userId) {
+        return firebaseService.readFromFirebase(DataBaseReference.USER, userId, CreateUserDTO.class);
+    }
+
+
+}
 
 
 

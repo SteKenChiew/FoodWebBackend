@@ -1,5 +1,6 @@
 package com.backend.foodweb.user;
 
+import com.backend.foodweb.cart.CartDTO;
 import lombok.Data;
 import lombok.Setter;
 @Data
@@ -9,6 +10,7 @@ public class CreateUserDTO {
     private String hashedpassword;
     private String token;
     private String UUID;
+    private CartDTO cart;
     public CreateUserDTO() {}
 
     public void setToken(String token) {
