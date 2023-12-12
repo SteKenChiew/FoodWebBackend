@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
@@ -276,6 +279,10 @@ public class UserController {
             // Handle the exception appropriately
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    @PostMapping("/api/upload-image")
+    public ResponseEntity<Map<String, String>> handleFileUpload(@RequestParam("file") MultipartFile file) {
+        return userService.uploadImage(file);
     }
 
 }

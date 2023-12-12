@@ -22,9 +22,27 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.*;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import com.google.firebase.cloud.StorageClient;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 @Service
 public class UserService {
-
+    private final Storage storage;
     @Autowired
     private FirebaseService firebaseService;
 
@@ -33,6 +51,10 @@ public class UserService {
 
     private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
+    public UserService() {
+        // Create a Storage instance using the default credentials
+        this.storage = StorageOptions.getDefaultInstance().getService();
+    }
     public String generateToken(String username) {
         // Set the expiration time for the token (e.g., 1 hour)
         long expirationTimeMillis = System.currentTimeMillis() + 3600000; // 1 hour
@@ -185,6 +207,43 @@ public class UserService {
                 throw new RuntimeException("Error fetching merchant by UUID", e);
             }
         }
+
+    public ResponseEntity<Map<String, String>> uploadImage(MultipartFile file) {
+        try {
+            // Specify the bucket name where you want to save the uploaded images
+            String bucketName = "foodweb-d4b60.appspot.com";
+
+            // Get the original filename
+            String originalFileName = file.getOriginalFilename();
+
+            // Specify the path within the bucket where the file will be saved
+            String objectName = "images/" + originalFileName;
+
+            // Get a reference to the Firebase Storage bucket
+            Storage storage = StorageClient.getInstance().bucket(bucketName).getStorage();
+
+            // Create BlobId to identify the object
+            BlobId blobId = BlobId.of(bucketName, objectName);
+
+            // Create BlobInfo to set metadata and other properties
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
+
+            // Upload the file to Firebase Storage
+            Blob blob = storage.create(blobInfo, file.getBytes());
+
+            // Construct a JSON response with the file path (in this case, the Firebase Storage object URL)
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "File uploaded successfully to Firebase Storage");
+            response.put("path", blob.getMediaLink()); // Use the Firebase Storage object URL
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Handle the exception appropriately (e.g., log it or return an error response)
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "File upload to Firebase Storage failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 
     public ResponseEntity addToCart(String userId, FoodItemDTO foodItem, int quantity) {
         CreateUserDTO userDTO = getUserById(userId);
