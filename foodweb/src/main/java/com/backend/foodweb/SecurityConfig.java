@@ -30,6 +30,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/user/create").permitAll()  // Allow registration
                 .antMatchers("/user/login").permitAll() // Allow login
+                .antMatchers("/user/cart").permitAll()
+                .antMatchers("/user/cart/add").permitAll()// Allow login
+                .antMatchers("/user/cart/items").permitAll()
                 .antMatchers("/merchant/create").permitAll()  // Allow registration
                 .antMatchers("/merchant/login").permitAll()  // Allow login
                 .antMatchers("/merchant/add-item").permitAll()  // Allow additem

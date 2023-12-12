@@ -20,8 +20,16 @@ public class FirebaseService {
         DatabaseReference ref = database.getReference(dataBaseReference.toString());
 
         // Assuming user.getUUID() returns the UUID of the user
-        ref.child(user.getUUID()).setValueAsync(user);
+        DatabaseReference userRef = ref.child(user.getUUID());
+
+        // Set the entire user object as a child node
+        userRef.setValueAsync(user);
+
+        // Set the entire list of cart items under the user's UUID for the cart
+        DatabaseReference cartRef = userRef.child("cart");
+        cartRef.setValueAsync(user.getCart());
     }
+
 
     public void writeToFirebaseMerchant(DataBaseReference dataBaseReference, CreateMerchantDTO merchant) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -40,36 +48,39 @@ public class FirebaseService {
 
 
 
-    public String readFromFirebase(DataBaseReference dataBaseReference, String UUID) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference ref = database.getReference(dataBaseReference.toString()).child(UUID);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        final String[] result = new String[1];
+        public <T> T readFromFirebase(DataBaseReference dataBaseReference, String UUID, Class<T> valueType) {
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference ref = database.getReference(dataBaseReference.toString()).child(UUID);
 
-        // Attach a listener to read the data
-        ref.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                result[0] = dataSnapshot.getValue(String.class);
-                latch.countDown();
+            final CountDownLatch latch = new CountDownLatch(1);
+            final T[] result = (T[]) Array.newInstance(valueType, 1);
+
+            // Attach a listener to read the data
+            ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    result[0] = dataSnapshot.getValue(valueType);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    latch.countDown();
+                }
+            });
+
+            try {
+                // Wait for the latch (maximum wait time: 10 seconds)
+                latch.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                latch.countDown();
-            }
-        });
-
-        try {
-            // Wait for the latch (maximum wait time: 10 seconds)
-            latch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            return result[0];
         }
 
-        return result[0];
-    }
+
 
     public <T> T getObjectByEmail(String email, DataBaseReference dataBaseReference, Class<T> valueType) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
