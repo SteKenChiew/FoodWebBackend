@@ -18,10 +18,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -169,4 +166,24 @@ public class UserService {
     }
 
 
-}
+        public CreateMerchantDTO getMerchantByUUID(String uuid) {
+            try {
+                // Retrieve the list of all merchants from Firebase
+                List<CreateMerchantDTO> allMerchants = firebaseService.getMerchantsFromFirebase();
+
+                // Filter the list to find the merchant with the specified UUID
+                Optional<CreateMerchantDTO> matchingMerchant = allMerchants.stream()
+                        .filter(merchant -> merchant.getUUID().equals(uuid))
+                        .findFirst();
+
+                // Return the matching merchant if found, otherwise return null
+                return matchingMerchant.orElse(null);
+            } catch (Exception e) {
+                // Handle the exception appropriately
+                throw new RuntimeException("Error fetching merchant by UUID", e);
+            }
+        }
+    }
+
+
+

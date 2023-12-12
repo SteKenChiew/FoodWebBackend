@@ -13,10 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -257,6 +254,24 @@ public class UserController {
             List<CreateMerchantDTO> restaurants = firebaseService.getMerchantsFromFirebase();
 
             return ResponseEntity.ok(restaurants);
+        } catch (Exception e) {
+            // Handle the exception appropriately
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @GetMapping("/restaurants/{uuid}")
+    public ResponseEntity<?> getRestaurantByUUID(@PathVariable String uuid) {
+        try {
+            // Retrieve the merchant with the specified UUID from the service
+            CreateMerchantDTO merchant = userService.getMerchantByUUID(uuid);
+
+            // Check if a matching merchant is found
+            if (merchant != null) {
+                return ResponseEntity.ok(merchant);
+            } else {
+                // If no matching merchant is found, return a 404 Not Found status
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
         } catch (Exception e) {
             // Handle the exception appropriately
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
