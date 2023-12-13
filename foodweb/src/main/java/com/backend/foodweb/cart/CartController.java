@@ -220,7 +220,7 @@ public class CartController {
 
         // Save the updated userDTO back to the database
         firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
-
+        addOrderToMerchant(order, userDTO.getCart().getMerchantUUID());
         // Construct the response with bookingId
         Map<String, String> response = new HashMap<>();
         response.put("bookingId", bookingId);
