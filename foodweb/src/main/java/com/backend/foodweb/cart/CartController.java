@@ -41,26 +41,40 @@ public class CartController {
         }
 
         // Extract the necessary fields from the requestMap
-        int itemID = ((Number) requestMap.get("itemID")).intValue();
+        String itemCategory = (String) requestMap.get("itemCategory");
+        String itemDescription = (String) requestMap.get("itemDescription");
+        String itemImg = (String) requestMap.get("itemImg");
+        String itemName = (String) requestMap.get("itemName");
+        double itemPrice = ((Number) requestMap.get("itemPrice")).doubleValue();
+        int itemTotalSale = ((Number) requestMap.get("itemTotalSale")).intValue();
         int quantity = ((Number) requestMap.get("quantity")).intValue();
+        int itemID = ((Number) requestMap.get("itemID")).intValue();
 
-        // Check if the item already exists in the user's cart
-        Optional<CartItemDTO> existingCartItem = userDTO.getCart().getCartItems().stream()
-                .filter(item -> item.getFoodItem().getItemID() == itemID)
-                .findFirst();
+        // Initialize the cart if it is null
+        if (userDTO.getCart() == null) {
+            userDTO.setCart(new CartDTO());
+        }
 
-        if (existingCartItem.isPresent()) {
-            // If the item already exists, update the quantity
-            existingCartItem.get().setQuantity(existingCartItem.get().getQuantity() + quantity);
-        } else {
-            // If the item does not exist, create a new CartItemDTO
-            String itemCategory = (String) requestMap.get("itemCategory");
-            String itemDescription = (String) requestMap.get("itemDescription");
-            String itemImg = (String) requestMap.get("itemImg");
-            String itemName = (String) requestMap.get("itemName");
-            double itemPrice = ((Number) requestMap.get("itemPrice")).doubleValue();
-            int itemTotalSale = ((Number) requestMap.get("itemTotalSale")).intValue();
+        // Initialize the cart items list if it is null
+        if (userDTO.getCart().getCartItems() == null) {
+            userDTO.getCart().setCartItems(new ArrayList<>());
+        }
 
+        // Check if the item already exists in the cart
+        List<CartItemDTO> cartItems = userDTO.getCart().getCartItems();
+        boolean itemExists = false;
+
+        for (CartItemDTO cartItem : cartItems) {
+            if (itemID == cartItem.getFoodItem().getItemID()) {
+                // Item already exists, update the quantity
+                cartItem.setQuantity(cartItem.getQuantity() + quantity);
+                itemExists = true;
+                break;
+            }
+        }
+
+        // If the item doesn't exist, add a new cart item
+        if (!itemExists) {
             CartItemDTO cartItem = new CartItemDTO();
             FoodItemDTO foodItem = new FoodItemDTO();
             foodItem.setItemID(itemID);
@@ -73,14 +87,19 @@ public class CartController {
 
             cartItem.setFoodItem(foodItem);
             cartItem.setQuantity(quantity);
+
             userDTO.getCart().getCartItems().add(cartItem);
         }
+
+        System.out.println("Final userDTO: " + userDTO);
 
         // Save the updated userDTO back to the database
         firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
 
         return ResponseEntity.ok().build();
     }
+
+
 
 
 

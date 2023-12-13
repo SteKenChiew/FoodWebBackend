@@ -11,7 +11,9 @@ public class CreateUserDTO {
     private String token;
     private String UUID;
     private CartDTO cart;
-    public CreateUserDTO() {}
+    public CreateUserDTO() {
+        this.cart = new CartDTO();
+    }
 
     public void setToken(String token) {
         this.token = token;
