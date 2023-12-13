@@ -1,6 +1,7 @@
 package com.backend.foodweb.user;
 
 import com.backend.foodweb.JwtUtils;
+import com.backend.foodweb.cart.Order;
 import com.backend.foodweb.firebase.DataBaseReference;
 import com.backend.foodweb.firebase.FirebaseService;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
@@ -285,7 +286,36 @@ public class UserController {
         return userService.uploadImage(file);
     }
 
+    @GetMapping("/user/order-summary/{uuid}/{bookingId}")
+    public ResponseEntity<Order> getOrderSummary(
+            @PathVariable String uuid,
+            @PathVariable String bookingId) {
+        System.out.println("Test");
+        CreateUserDTO userDTO = userService.getUserById(uuid);
+
+        if (userDTO != null) {
+            List<Order> activeOrders = userDTO.getActiveOrders();
+
+            // Find the order with the given bookingId
+            Optional<Order> foundOrder = activeOrders.stream()
+                    .filter(order -> bookingId.equals(order.getBookingId()))
+                    .findFirst();
+
+            if (foundOrder.isPresent()) {
+                return ResponseEntity.ok(foundOrder.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+
+
 }
+
+
 
 
 

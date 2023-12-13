@@ -6,6 +6,7 @@ import com.backend.foodweb.firebase.FirebaseService;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.backend.foodweb.merchant.FoodItemDTO;
 import com.backend.foodweb.merchant.MerchantLoginDTO;
+import com.backend.foodweb.merchant.MerchantService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.rpc.NotFoundException;
@@ -267,6 +268,10 @@ public class UserService {
 
     public CreateUserDTO getUserById(String userId) {
         return firebaseService.readFromFirebase(DataBaseReference.USER, userId, CreateUserDTO.class);
+    }
+
+    public void updateMerchant(CreateMerchantDTO merchantDTO) {
+        firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchantDTO);
     }
 
 

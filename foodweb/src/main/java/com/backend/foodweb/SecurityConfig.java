@@ -34,7 +34,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/user/cart/add").permitAll()// Allow login
                 .antMatchers("/user/cart/items").permitAll()
                 .antMatchers("/user/cart/update").permitAll()
-
+                .antMatchers("/user/cart/place-order").permitAll()
+                .antMatchers("/user/order-summary/**").permitAll()
                 .antMatchers("/merchant/create").permitAll()  // Allow registration
                 .antMatchers("/merchant/login").permitAll()  // Allow login
                 .antMatchers("/merchant/add-item").permitAll()  // Allow additem

@@ -1,7 +1,8 @@
 package com.backend.foodweb.cart;
-
+import java.security.SecureRandom;
 import com.backend.foodweb.firebase.DataBaseReference;
 import com.backend.foodweb.firebase.FirebaseService;
+import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.backend.foodweb.merchant.FoodItemDTO;
 import com.backend.foodweb.user.CreateUserDTO;
 import com.backend.foodweb.user.UserService;
@@ -12,10 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 public class CartController {
@@ -30,11 +28,13 @@ public class CartController {
     @PostMapping("user/cart/add")
     public ResponseEntity<Void> addToCart(
             @RequestParam String uuid,
+            @RequestParam String merchantUuid,
             @RequestBody Map<String, Object> requestMap
     ) {
         CreateUserDTO userDTO = userService.getUserById(uuid);
         System.out.println("Called ");
         System.out.println("Received cartItem: " + requestMap);
+        System.out.println(merchantUuid);
 
         if (userDTO == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -53,6 +53,14 @@ public class CartController {
         // Initialize the cart if it is null
         if (userDTO.getCart() == null) {
             userDTO.setCart(new CartDTO());
+            userDTO.getCart().setMerchantUUID(merchantUuid);
+        } else {
+            // Check if the cart belongs to the same merchant
+            if (userDTO.getCart().getMerchantUUID() == null || !userDTO.getCart().getMerchantUUID().equals(merchantUuid)) {
+                // If not, clear the cart before adding items for a new merchant
+                cartService.clearCart(userDTO.getCart());
+                userDTO.getCart().setMerchantUUID(merchantUuid);
+            }
         }
 
         // Initialize the cart items list if it is null
@@ -180,6 +188,100 @@ public class CartController {
         firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
 
         return ResponseEntity.ok().build();
+    }
+    @PostMapping("user/cart/place-order")
+    public ResponseEntity<Map<String, String>> placeOrder(@RequestParam String uuid) {
+        CreateUserDTO userDTO = userService.getUserById(uuid);
+        if (userDTO == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Get the user's cart items
+        List<CartItemDTO> cartItems = userDTO.getCart().getCartItems();
+
+        if (cartItems.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // No items in the cart
+        }
+
+        // Create an order from the cart items
+        Order order = cartService.createOrder(cartItems);
+
+        // Generate a unique order number
+        String orderNumber = OrderNumberGenerator.generateOrderNumber();
+        order.setOrderId(orderNumber);
+        String bookingId = BookingIdGenerator.generateBookingId();
+        order.setBookingId(bookingId);
+
+        // Add the order to the user's active orders
+        userDTO.getActiveOrders().add(order);
+
+        // Clear the user's cart
+        userDTO.getCart().setCartItems(new ArrayList<>());
+
+        // Save the updated userDTO back to the database
+        firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
+
+        // Construct the response with bookingId
+        Map<String, String> response = new HashMap<>();
+        response.put("bookingId", bookingId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    private void addOrderToMerchant(Order order, String merchantUuid) {
+        CreateMerchantDTO merchantDTO = userService.getMerchantByUUID(merchantUuid);
+
+        // Add the order to the merchant's active orders
+        merchantDTO.getActiveOrders().add(order);
+
+        // Update the merchant's information in the database
+        userService.updateMerchant(merchantDTO);
+    }
+
+
+
+
+    public class OrderNumberGenerator {
+
+        private static final String PREFIX = "NN-";
+        private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        private static final int RANDOM_PART_LENGTH = 4;
+
+        public static String generateOrderNumber() {
+            StringBuilder orderNumber = new StringBuilder(PREFIX);
+            SecureRandom random = new SecureRandom();
+
+            for (int i = 0; i < RANDOM_PART_LENGTH; i++) {
+                int randomIndex = random.nextInt(CHARACTERS.length());
+                orderNumber.append(CHARACTERS.charAt(randomIndex));
+            }
+
+            return orderNumber.toString();
+        }
+
+
+    }
+
+
+    public class BookingIdGenerator {
+
+        private static final int BOOKING_ID_LENGTH = 16;
+        private static final String DIGITS = "0123456789";
+
+        public static String generateBookingId() {
+            StringBuilder bookingId = new StringBuilder();
+            SecureRandom random = new SecureRandom();
+
+            for (int i = 0; i < BOOKING_ID_LENGTH; i++) {
+                int randomIndex = random.nextInt(DIGITS.length());
+                bookingId.append(DIGITS.charAt(randomIndex));
+            }
+
+            return bookingId.toString();
+        }
+
+
     }
 
 }

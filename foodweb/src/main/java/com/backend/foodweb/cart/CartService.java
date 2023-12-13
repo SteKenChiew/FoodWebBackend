@@ -31,5 +31,23 @@ public class CartService {
         return cartItems;
     }
 
-    // Other methods for updating quantities, removing items, etc.
+    public Order createOrder(List<CartItemDTO> cartItems) {
+        Order order = new Order();
+        order.setCartItems(cartItems);
+        order.setStatus("active"); // You can set the initial status as needed
+        return order;
+    }
+    public void clearCart(CartDTO cart) {
+        // Clear the cart items list
+        if (cart != null && cart.getCartItems() != null) {
+            cart.getCartItems().clear();
+        }
+
+
+
+        // You can also log or print a message to indicate that the cart has been cleared
+        System.out.println("Cart cleared: " + cart);
+    }
+
+
 }
