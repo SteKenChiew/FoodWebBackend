@@ -126,5 +126,60 @@ public class CartController {
         return ResponseEntity.ok(cartDTO);
     }
 
-    // Other endpoints for updating quantities, removing items, etc.
+    @PutMapping("user/cart/update")
+    public ResponseEntity<Void> updateCart(
+            @RequestParam String uuid,
+            @RequestBody Map<String, Object> requestMap
+    ) {
+        CreateUserDTO userDTO = userService.getUserById(uuid);
+        System.out.println("Called ");
+        System.out.println("Received cart update: " + requestMap);
+
+        if (userDTO == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Extract the necessary fields from the requestMap
+        int itemID = ((Number) requestMap.get("itemID")).intValue();
+        int quantity = ((Number) requestMap.get("quantity")).intValue();
+
+        // Initialize the cart if it is null
+        if (userDTO.getCart() == null) {
+            userDTO.setCart(new CartDTO());
+        }
+
+        // Initialize the cart items list if it is null
+        if (userDTO.getCart().getCartItems() == null) {
+            userDTO.getCart().setCartItems(new ArrayList<>());
+        }
+
+        // Check if the item already exists in the cart
+        List<CartItemDTO> cartItems = userDTO.getCart().getCartItems();
+        boolean itemExists = false;
+
+        for (CartItemDTO cartItem : cartItems) {
+            if (itemID == cartItem.getFoodItem().getItemID()) {
+                if (quantity > 0) {
+                    // Update the quantity if quantity is positive
+                    cartItem.setQuantity(quantity);
+                } else {
+                    // Remove the item if quantity is non-positive
+                    cartItems.remove(cartItem);
+                }
+
+                itemExists = true;
+                break;
+            }
+        }
+
+        // If the item doesn't exist, you can choose to handle it as needed
+
+        System.out.println("Final userDTO after update: " + userDTO);
+
+        // Save the updated userDTO back to the database
+        firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
+
+        return ResponseEntity.ok().build();
+    }
+
 }
