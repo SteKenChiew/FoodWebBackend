@@ -191,23 +191,28 @@ public class UserService {
     }
 
 
-        public CreateMerchantDTO getMerchantByUUID(String uuid) {
-            try {
-                // Retrieve the list of all merchants from Firebase
-                List<CreateMerchantDTO> allMerchants = firebaseService.getMerchantsFromFirebase();
-
-                // Filter the list to find the merchant with the specified UUID
-                Optional<CreateMerchantDTO> matchingMerchant = allMerchants.stream()
-                        .filter(merchant -> merchant.getUUID().equals(uuid))
-                        .findFirst();
-
-                // Return the matching merchant if found, otherwise return null
-                return matchingMerchant.orElse(null);
-            } catch (Exception e) {
-                // Handle the exception appropriately
-                throw new RuntimeException("Error fetching merchant by UUID", e);
+    public CreateMerchantDTO getMerchantByUUID(String uuid) {
+        try {
+            // Safety check for null UUID
+            if (uuid == null) {
+                return null;
             }
+
+            // Retrieve the list of all merchants from Firebase
+            List<CreateMerchantDTO> allMerchants = firebaseService.getMerchantsFromFirebase();
+
+            // Filter the list to find the merchant with the specified UUID
+            Optional<CreateMerchantDTO> matchingMerchant = allMerchants.stream()
+                    .filter(merchant -> uuid.equals(merchant.getUUID()))
+                    .findFirst();
+
+            // Return the matching merchant if found, otherwise return null
+            return matchingMerchant.orElse(null);
+        } catch (Exception e) {
+            // Handle the exception appropriately
+            throw new RuntimeException("Error fetching merchant by UUID", e);
         }
+    }
 
     public ResponseEntity<Map<String, String>> uploadImage(MultipartFile file) {
         try {

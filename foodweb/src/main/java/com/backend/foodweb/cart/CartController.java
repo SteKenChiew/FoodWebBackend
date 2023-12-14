@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -195,7 +196,6 @@ public class CartController {
         if (userDTO == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        System.out.println("Before placeOrder - userDTO: " + userDTO);
 
         // Get the user's cart items
         List<CartItemDTO> cartItems = userDTO.getCart().getCartItems();
@@ -205,8 +205,12 @@ public class CartController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // No items in the cart
         }
 
+        // Calculate the total order price
+        double orderTotal = calculateOrderTotal(cartItems);
+
         // Create an order from the cart items
         Order order = cartService.createOrder(cartItems);
+        order.setOrderTotal(orderTotal);
 
         // Generate a unique order number
         String orderNumber = OrderNumberGenerator.generateOrderNumber();
@@ -214,28 +218,45 @@ public class CartController {
         String bookingId = BookingIdGenerator.generateBookingId();
         order.setBookingId(bookingId);
 
+        // Get the merchant name using the merchantUUID
+        String merchantUuid = userDTO.getCart().getMerchantUUID();
+        CreateMerchantDTO merchantDTO = userService.getMerchantByUUID(merchantUuid);
+        if (merchantDTO != null) {
+            order.setMerchantName(merchantDTO.getMerchantName());
+        }
+
+        // Set the order placement date and time
+        order.setOrderPlacedDateTime(LocalDateTime.now());
+
         // Add the order to the user's active orders
         userDTO.getActiveOrders().add(order);
-        addOrderToMerchant(order, userDTO.getCart().getMerchantUUID());
+        addOrderToMerchant(order, merchantUuid);
+
         // Clear the user's cart
         userDTO.getCart().setCartItems(new ArrayList<>());
         userDTO.getCart().setMerchantUUID(null);
-        System.out.println("After placeOrder - userDTO: " + userDTO);
 
         // Save the updated userDTO back to the database
         firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
 
-        // Use the saved merchantUUID
-
-
-        // Construct the response with bookingId
+        // Construct the response with bookingId, orderTotal, merchantName, and order placement date and time
         Map<String, String> response = new HashMap<>();
         response.put("bookingId", bookingId);
+        response.put("orderTotal", String.valueOf(orderTotal));
+        response.put("merchantName", (merchantDTO != null) ? merchantDTO.getMerchantName() : "Unknown Merchant");
+        response.put("orderPlacedDateTime", order.getOrderPlacedDateTime().toString());
 
         return ResponseEntity.ok(response);
     }
 
 
+    private double calculateOrderTotal(List<CartItemDTO> cartItems) {
+        double total = 0.0;
+        for (CartItemDTO cartItem : cartItems) {
+            total += cartItem.getQuantity() * cartItem.getFoodItem().getItemPrice();
+        }
+        return total;
+    }
 
     private void addOrderToMerchant(Order order, String merchantUuid) {
         // Retrieve merchantDTO from the service
