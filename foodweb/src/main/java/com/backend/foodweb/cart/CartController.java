@@ -195,11 +195,13 @@ public class CartController {
         if (userDTO == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+        System.out.println("Before placeOrder - userDTO: " + userDTO);
 
         // Get the user's cart items
         List<CartItemDTO> cartItems = userDTO.getCart().getCartItems();
 
-        if (cartItems.isEmpty()) {
+        // Check if cartItems is null or empty
+        if (cartItems == null || cartItems.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // No items in the cart
         }
 
@@ -214,13 +216,18 @@ public class CartController {
 
         // Add the order to the user's active orders
         userDTO.getActiveOrders().add(order);
-
+        addOrderToMerchant(order, userDTO.getCart().getMerchantUUID());
         // Clear the user's cart
         userDTO.getCart().setCartItems(new ArrayList<>());
+        userDTO.getCart().setMerchantUUID(null);
+        System.out.println("After placeOrder - userDTO: " + userDTO);
 
         // Save the updated userDTO back to the database
         firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
-        addOrderToMerchant(order, userDTO.getCart().getMerchantUUID());
+
+        // Use the saved merchantUUID
+
+
         // Construct the response with bookingId
         Map<String, String> response = new HashMap<>();
         response.put("bookingId", bookingId);
@@ -229,8 +236,18 @@ public class CartController {
     }
 
 
+
     private void addOrderToMerchant(Order order, String merchantUuid) {
+        // Retrieve merchantDTO from the service
         CreateMerchantDTO merchantDTO = userService.getMerchantByUUID(merchantUuid);
+
+        // Check if merchantDTO is null
+        if (merchantDTO == null) {
+            // Handle the case when merchantDTO is null
+            // Log an error or throw an exception, depending on your requirements
+            System.err.println("MerchantDTO is null. Unable to add order to merchant.");
+            return;
+        }
 
         // Add the order to the merchant's active orders
         merchantDTO.getActiveOrders().add(order);
