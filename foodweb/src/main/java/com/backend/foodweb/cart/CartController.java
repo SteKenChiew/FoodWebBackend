@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.*;
 
 @RestController
@@ -225,8 +225,9 @@ public class CartController {
             order.setMerchantName(merchantDTO.getMerchantName());
         }
 
+
         // Set the order placement date and time
-        order.setOrderPlacedDateTime(LocalDateTime.now());
+        order.setOrderPlacedDateTime( LocalDateTime.now().toString());
 
         // Add the order to the user's active orders
         userDTO.getActiveOrders().add(order);
