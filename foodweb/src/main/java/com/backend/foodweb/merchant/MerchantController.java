@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -161,6 +164,54 @@ public class MerchantController {
         List<Order> readyOrders= merchantDTO.getOrderHistory();
 
         return ResponseEntity.ok(readyOrders);
+    }
+
+    @GetMapping("merchant/sales/today")
+    public ResponseEntity<String> getMerchantTotalSalesToday(@RequestParam String merchantUuid) {
+        // Retrieve merchantDTO from the service
+        CreateMerchantDTO merchantDTO = userService.getMerchantByUUID(merchantUuid);
+
+        // Check if merchantDTO is null
+        if (merchantDTO == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Get the merchant's order history
+        List<Order> orderHistory = merchantDTO.getOrderHistory();
+
+        // Check if orderHistory is null
+        if (orderHistory == null) {
+            // If orderHistory is null, there are no orders, so total sales is 0
+            return ResponseEntity.ok("0.00");
+        }
+
+        // Calculate total sales for today
+        double totalSalesToday = orderHistory.stream()
+                .filter(order -> isToday(order.getOrderPlacedDateTime())) // Use the orderPlacedDateTime
+                .mapToDouble(Order::getOrderTotal)
+                .sum();
+
+        // Format totalSalesToday with two decimal places
+        String formattedTotalSales = String.format("%.2f", totalSalesToday);
+
+        // Return the formatted total sales as a string
+        return ResponseEntity.ok(formattedTotalSales);
+    }
+
+
+    private boolean isToday(String orderPlacedDateTime) {
+        if (orderPlacedDateTime == null) {
+            // Handle the case when orderPlacedDateTime is null
+            return false;
+        }
+
+        try {
+            LocalDateTime orderDateTime = LocalDateTime.parse(orderPlacedDateTime);
+            return LocalDate.now().isEqual(orderDateTime.toLocalDate());
+        } catch (DateTimeParseException e) {
+            // Handle the case when parsing fails (invalid date format)
+            return false;
+        }
     }
 
 

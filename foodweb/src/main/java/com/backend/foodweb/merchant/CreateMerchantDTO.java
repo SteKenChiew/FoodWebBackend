@@ -20,6 +20,7 @@ public class CreateMerchantDTO {
     private List<Order> activeOrders;
     private List<Order> readyOrders;
     private List<Order> orderHistory;
+    private Double totalSales;
     public CreateMerchantDTO() {
         // Ensure that foodItems is initialized as a Map
         this.foodItems = new ArrayList<>();

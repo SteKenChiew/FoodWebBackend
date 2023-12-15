@@ -46,6 +46,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers( "/merchant/orders/ready").permitAll()
                 .antMatchers( "/merchant/orders/mark-as-done").permitAll()
                 .antMatchers( "/merchant/orders/history").permitAll()
+                .antMatchers( "/merchant/sales/today").permitAll()
                 .antMatchers("/restaurants").permitAll()
                 .antMatchers("/restaurants/{uuid}").permitAll()// Allow get restaurant
                 .antMatchers("/api/upload-image").permitAll()
