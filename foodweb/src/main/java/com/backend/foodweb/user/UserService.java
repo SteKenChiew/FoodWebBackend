@@ -9,7 +9,7 @@ import com.backend.foodweb.merchant.MerchantLoginDTO;
 import com.backend.foodweb.merchant.MerchantService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.gax.rpc.NotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
