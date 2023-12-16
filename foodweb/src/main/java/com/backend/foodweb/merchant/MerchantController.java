@@ -24,7 +24,8 @@ public class MerchantController {
     UserService userService;
     @Autowired
     private FirebaseService firebaseService;
-
+    @Autowired
+    private MerchantService merchantService;
     @GetMapping("merchant/orders/active")
     public ResponseEntity<List<Order>> getMerchantActiveOrders(@RequestParam String merchantUuid) {
         // Retrieve merchantDTO from the service
@@ -214,5 +215,14 @@ public class MerchantController {
         }
     }
 
+    @PutMapping("merchant/update-food-availability")
+    public ResponseEntity<String> updateFoodItemAvailability(
+            @RequestParam String merchantEmail,
+            @RequestParam int itemID,
+            @RequestParam boolean itemAvailability) {
+        // Implement your logic to update food availability
+        merchantService.updateItemAvailability(merchantEmail, itemID, itemAvailability);
+        return ResponseEntity.ok("Food availability updated successfully");
+    }
 
 }
