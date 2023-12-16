@@ -310,6 +310,29 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+    @PutMapping("/update-user")
+    public ResponseEntity<?> updateUser(@RequestBody CreateUserDTO User) {
+        try {
+            // Retrieve the merchant by email
+           CreateUserDTO user = userService.getUserById(User.getUUID());
+
+            // Check if the merchant exists
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }else{
+            firebaseService.writeToFirebaseUser(DataBaseReference.USER, User);
+            return ResponseEntity.ok(User);
+            }
+
+        } catch (Exception e) {
+            // Log the exception for debugging purposes
+            e.printStackTrace();
+            // Handle the exception appropriately and provide a meaningful response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
+
 
 
 

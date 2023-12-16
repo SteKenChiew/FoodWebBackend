@@ -202,6 +202,11 @@ public class FirebaseService {
         return merchants;
     }
 
+    public void writeToFirebaseUser(DataBaseReference dataBaseReference, CreateUserDTO user) {
+        // update user details
+
+    }
+
 
 }
 
