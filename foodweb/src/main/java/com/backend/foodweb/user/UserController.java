@@ -221,9 +221,16 @@ public class UserController {
 
     // Helper method to get the next available itemID
     private int getNextItemID(List<FoodItemDTO> foodItems) {
-        int maxID = foodItems.stream().mapToInt(FoodItemDTO::getItemID).max().orElse(0);
+        int maxID = foodItems.stream()
+                .map(FoodItemDTO::getItemID)  // Use map instead of mapToInt
+                .filter(Objects::nonNull)     // Filter out null values
+                .mapToInt(Integer::intValue)   // Convert to int
+                .max()
+                .orElse(0);
+
         return maxID + 1;
     }
+
 
 
     @GetMapping("/merchant/get-food-items")

@@ -41,6 +41,28 @@ public class MerchantController {
         // Get the merchant's active orders
         List<Order> activeOrders = merchantDTO.getActiveOrders();
 
+        // Set the duration based on the number of active orders
+        int numberOfActiveOrders = activeOrders.size();
+        int duration;
+
+        // Your own logic for setting the duration based on the number of active orders
+        if (numberOfActiveOrders == 0) {
+            duration = 0; // 0 minutes for 0 active orders
+        } else if (numberOfActiveOrders <= 5) {
+            duration = 30; // 60 minutes for 0 to 5 active orders
+        }else if (numberOfActiveOrders <= 10) {
+            duration = 60; // 120 minutes for 6 to 10 active orders
+        } else {
+            duration = 120; // 180 minutes for more than 10 active orders
+        }
+
+        // Set the duration in the merchantDTO
+        merchantDTO.setDuration(duration);
+
+        // Update the merchant information in Firebase
+        userService.updateMerchant(merchantDTO);
+
+
         return ResponseEntity.ok(activeOrders);
     }
 

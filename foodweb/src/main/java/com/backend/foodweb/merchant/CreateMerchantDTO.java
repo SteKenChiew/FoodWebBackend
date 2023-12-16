@@ -16,6 +16,7 @@ public class CreateMerchantDTO {
     private String merchantType;
     private String token;
     private String UUID;
+    private int duration;
     private List<FoodItemDTO> foodItems;
     private List<Order> activeOrders;
     private List<Order> readyOrders;

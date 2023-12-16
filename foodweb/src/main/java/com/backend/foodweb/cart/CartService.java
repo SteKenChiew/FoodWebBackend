@@ -1,5 +1,7 @@
 package com.backend.foodweb.cart;
 
+import com.backend.foodweb.merchant.CreateMerchantDTO;
+import com.backend.foodweb.merchant.FoodItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -49,5 +51,5 @@ public class CartService {
         System.out.println("Cart cleared: " + cart);
     }
 
-
+   
 }

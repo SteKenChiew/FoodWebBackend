@@ -31,5 +31,8 @@ public class MerchantService {
             userService.updateMerchant(merchant);
         }
     }
+
+
+
 }
 

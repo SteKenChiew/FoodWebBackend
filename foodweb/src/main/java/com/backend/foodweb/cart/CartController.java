@@ -223,11 +223,34 @@ public class CartController {
         CreateMerchantDTO merchantDTO = userService.getMerchantByUUID(merchantUuid);
         if (merchantDTO != null) {
             order.setMerchantName(merchantDTO.getMerchantName());
+
+            // Update itemTotalSale for each food item in the merchant's inventory
+            for (CartItemDTO cartItem : cartItems) {
+                FoodItemDTO foodItem = cartItem.getFoodItem();
+                int quantity = cartItem.getQuantity();
+
+                // Find the corresponding food item in the merchant's inventory
+                FoodItemDTO merchantFoodItem = merchantDTO.getFoodItems().stream()
+                        .filter(merchantItem -> merchantItem.getItemID() == foodItem.getItemID())
+                        .findFirst()
+                        .orElse(null);
+
+                if (merchantFoodItem != null) {
+                    // Update itemTotalSale for the merchant food item
+                    merchantFoodItem.setItemTotalSale(merchantFoodItem.getItemTotalSale() + quantity);
+                }
+            }
+
+            // Save the updated merchantDTO back to the database
+            firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchantDTO);
+        } else {
+            // Handle the case where merchantDTO is null
+            // This may occur if the merchant is not found by UUID
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-
         // Set the order placement date and time
-        order.setOrderPlacedDateTime( LocalDateTime.now().toString());
+        order.setOrderPlacedDateTime(LocalDateTime.now().toString());
 
         // Add the order to the user's active orders
         userDTO.getActiveOrders().add(order);
@@ -249,6 +272,7 @@ public class CartController {
 
         return ResponseEntity.ok(response);
     }
+
 
 
     private double calculateOrderTotal(List<CartItemDTO> cartItems) {
