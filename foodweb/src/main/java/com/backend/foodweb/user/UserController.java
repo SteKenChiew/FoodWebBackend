@@ -152,9 +152,10 @@ public class UserController {
 
 
     @PostMapping(value = "/merchant/add-item")
-    public ResponseEntity addFoodItemToMerchant(@RequestPart("image") MultipartFile image,
-                                                @RequestParam String merchantEmail,
-                                                @RequestParam("foodItem") String foodItemJson) {
+    public ResponseEntity addFoodItemToMerchant(
+            @RequestParam String image,  // Use String instead of MultipartFile
+            @RequestParam String merchantEmail,
+            @RequestParam("foodItem") String foodItemJson) {
         try {
             // Log relevant information
             System.out.println("Merchant Email: " + merchantEmail);
@@ -179,11 +180,8 @@ public class UserController {
             // Set the itemID for the new food item
             foodItemDTO.setItemID(getNextItemID(merchant.getFoodItems()));
 
-            // Save image to Firebase Storage
-            String imageUrl = saveImageToFirebaseStorage(image, merchantEmail, String.valueOf(foodItemDTO.getItemID()));
-
             // Set the image URL in the food item
-            foodItemDTO.setItemImg(imageUrl);
+            foodItemDTO.setItemImg(image);
 
             // Add the new food item to the merchant's foodItems list
             merchant.getFoodItems().add(foodItemDTO);
@@ -197,6 +195,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
+
 
     // Method to save the image to a local directory
 //    private String saveImageLocally(MultipartFile image, String merchantEmail, String itemId) throws IOException {
@@ -218,38 +217,6 @@ public class UserController {
 //        // Return the URL or relative path to the saved image
 //        return "/images/" + merchantEmail + "/" + itemId + "/" + fileName;
 //    }
-
-    private String saveImageToFirebaseStorage(MultipartFile image, String merchantEmail, String itemId) throws IOException {
-        try {
-            String projectId = "foodweb-d4b60"; // Replace with your Firebase project ID
-            String bucketName = "foodweb-d4b60.appspot.com"; // Replace with your Firebase storage bucket name
-
-            // Initialize Firebase Storage
-            Storage storage = StorageOptions.newBuilder().setProjectId("foodweb-d4b60").build().getService();
-
-
-            // Generate a unique filename for the image
-            String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-
-            // Construct the path within Firebase Storage
-            String storagePath = "images/" + merchantEmail + "/" + itemId + "/" + fileName;
-
-            // Define the BlobId, specifying the bucket name and object name.
-            BlobId blobId = BlobId.of(bucketName, storagePath);
-
-            // Create the BlobInfo with the BlobId and the input stream containing the file content.
-            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(image.getContentType()).build();
-
-            // Upload the file to Firebase Storage
-            storage.create(blobInfo, image.getBytes());
-
-            // Return the URL or relative path to the saved image in Firebase Storage
-            return "gs://" + bucketName + "/" + storagePath;
-        } catch (Exception e) {
-            e.printStackTrace(); // Log the exception details
-            throw e; // Rethrow the exception to propagate it up
-        }
-    }
 
 
     // Helper method to get the next available itemID
