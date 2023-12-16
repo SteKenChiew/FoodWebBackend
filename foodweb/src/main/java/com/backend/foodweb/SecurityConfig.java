@@ -56,7 +56,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .exceptionHandling().authenticationEntryPoint((request, response, authException) -> {
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: " + authException.getMessage());
-                });
+                })
+                .and()
+                .headers().contentTypeOptions().disable();
     }
 
 

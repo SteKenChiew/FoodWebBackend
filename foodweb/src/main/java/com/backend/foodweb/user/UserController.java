@@ -3,22 +3,32 @@ package com.backend.foodweb.user;
 import com.backend.foodweb.JwtUtils;
 import com.backend.foodweb.cart.Order;
 import com.backend.foodweb.firebase.DataBaseReference;
+import com.backend.foodweb.firebase.FirebaseInitializer;
 import com.backend.foodweb.firebase.FirebaseService;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.backend.foodweb.merchant.FoodItemDTO;
 import com.backend.foodweb.merchant.MerchantLoginDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
@@ -27,6 +37,8 @@ public class UserController {
     UserService userService;
     @Autowired
     private FirebaseService firebaseService;
+    @Autowired
+    private FirebaseInitializer.FirebaseStorageService firebaseStorageService;
     @Autowired
     private JwtUtils jwtUtils;
 
@@ -139,9 +151,15 @@ public class UserController {
     }
 
 
-    @PostMapping("/merchant/add-item")
-    public ResponseEntity addFoodItemToMerchant(@RequestBody FoodItemDTO foodItemDTO, @RequestParam String merchantEmail) {
+    @PostMapping(value = "/merchant/add-item")
+    public ResponseEntity addFoodItemToMerchant(
+            @RequestParam String image,  // Use String instead of MultipartFile
+            @RequestParam String merchantEmail,
+            @RequestParam("foodItem") String foodItemJson) {
         try {
+            // Log relevant information
+            System.out.println("Merchant Email: " + merchantEmail);
+
             // Retrieve the merchant by email
             CreateMerchantDTO merchant = userService.getMerchantByEmail(merchantEmail);
 
@@ -155,8 +173,15 @@ public class UserController {
                 merchant.setFoodItems(new ArrayList<>());
             }
 
+            // Deserialize foodItemJson to FoodItemDTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            FoodItemDTO foodItemDTO = objectMapper.readValue(foodItemJson, FoodItemDTO.class);
+
             // Set the itemID for the new food item
             foodItemDTO.setItemID(getNextItemID(merchant.getFoodItems()));
+
+            // Set the image URL in the food item
+            foodItemDTO.setItemImg(image);
 
             // Add the new food item to the merchant's foodItems list
             merchant.getFoodItems().add(foodItemDTO);
@@ -164,12 +189,35 @@ public class UserController {
             // Update the merchant in the database
             firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchant);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(merchant);
+            return ResponseEntity.ok("Item added successfully");
         } catch (Exception e) {
-            // Handle the exception appropriately
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            e.printStackTrace(); // Log the exception details
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
+
+
+    // Method to save the image to a local directory
+//    private String saveImageLocally(MultipartFile image, String merchantEmail, String itemId) throws IOException {
+//        // Define the directory to save images
+//        String uploadDirectory = "C:\\Users\\chiew\\Desktop\\Testingimg\\";
+//
+//        // Generate a unique filename for the image
+//        String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
+//
+//        // Construct the complete file path
+//        String filePath = uploadDirectory + merchantEmail + "\\" + itemId + "\\" + fileName;
+//
+//        // Create directories if they don't exist
+//        Files.createDirectories(Paths.get(filePath).getParent());
+//
+//        // Save the image to the specified path
+//        Files.write(Paths.get(filePath), image.getBytes());
+//
+//        // Return the URL or relative path to the saved image
+//        return "/images/" + merchantEmail + "/" + itemId + "/" + fileName;
+//    }
+
 
     // Helper method to get the next available itemID
     private int getNextItemID(List<FoodItemDTO> foodItems) {
