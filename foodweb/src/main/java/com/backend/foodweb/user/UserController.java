@@ -14,6 +14,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -365,31 +366,112 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
-    @PutMapping("/update-user")
-    public ResponseEntity<?> updateUser(@RequestBody CreateUserDTO User) {
+    @PostMapping("user/update-user")
+    public ResponseEntity<?> updateUser(@RequestBody CreateUserDTO userToUpdate) {
         try {
-            // Retrieve the merchant by email
-           CreateUserDTO user = userService.getUserById(User.getUUID());
-
-            // Check if the merchant exists
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-            }else{
-            firebaseService.writeToFirebaseUser(DataBaseReference.USER, User);
-            return ResponseEntity.ok(User);
+            // Validate the user input
+            if (StringUtils.isEmpty(userToUpdate.getEmail()) && StringUtils.isEmpty(userToUpdate.getUsername())) {
+                String errorMessage = "At least one of email or username must be provided for update";
+                System.out.println("Validation Error: " + errorMessage);
+                return ResponseEntity.badRequest().body(errorMessage);
             }
 
+            // Ensure that UUID is not null
+            if (userToUpdate.getUUID() == null) {
+                String errorMessage = "UUID cannot be null";
+                System.out.println("Validation Error: " + errorMessage);
+                return ResponseEntity.badRequest().body(errorMessage);
+            }
+
+            // Retrieve the user by UUID
+            CreateUserDTO existingUser = userService.getUserById(userToUpdate.getUUID());
+
+            // Check if the user exists
+            if (existingUser == null) {
+                String errorMessage = "User not found";
+                System.out.println("Validation Error: " + errorMessage);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
+            }
+
+            // Update the user information
+            if (!StringUtils.isEmpty(userToUpdate.getEmail())) {
+                existingUser.setEmail(userToUpdate.getEmail());
+            }
+
+            if (!StringUtils.isEmpty(userToUpdate.getUsername())) {
+                existingUser.setUsername(userToUpdate.getUsername());
+            }
+
+            // Update Firebase data
+            firebaseService.writeToFirebase(DataBaseReference.USER, existingUser);
+
+            return ResponseEntity.ok(existingUser);
         } catch (Exception e) {
             // Log the exception for debugging purposes
             e.printStackTrace();
             // Handle the exception appropriately and provide a meaningful response
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+            String errorMessage = "Internal server error";
+            System.out.println("Validation Error: " + errorMessage);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
         }
     }
 
 
 
 
+
+
+
+
+    @GetMapping("user/orders/active")
+    public ResponseEntity<List<Order>> getUserActiveOrders(@RequestParam String  userUuid) {
+        // Retrieve merchantDTO from the service
+        CreateUserDTO userDTO = userService.getUserById(userUuid);
+
+        // Check if merchantDTO is null
+        if (userDTO == null) {
+            // Handle the case when merchantDTO is null
+            // Log an error or throw an exception, depending on your requirements
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Get the merchant's active orders
+        List<Order> activeOrders = userDTO.getActiveOrders();
+
+        // Set the duration based on the number of active orders
+
+
+
+        userService.updateUser(userDTO);
+
+
+        return ResponseEntity.ok(activeOrders);
+    }
+
+    @GetMapping("user/orders/orderhistory")
+    public ResponseEntity<List<Order>> getUserOrderHistory(@RequestParam String  userUuid) {
+        // Retrieve merchantDTO from the service
+        CreateUserDTO userDTO = userService.getUserById(userUuid);
+
+        // Check if merchantDTO is null
+        if (userDTO == null) {
+            // Handle the case when merchantDTO is null
+            // Log an error or throw an exception, depending on your requirements
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Get the merchant's active orders
+        List<Order> orderHistory = userDTO.getOrderHistory();
+
+        // Set the duration based on the number of active orders
+
+
+
+        userService.updateUser(userDTO);
+
+
+        return ResponseEntity.ok(orderHistory);
+    }
 
 }
 

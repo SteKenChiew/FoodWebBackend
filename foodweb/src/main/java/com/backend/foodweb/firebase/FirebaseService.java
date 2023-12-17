@@ -1,6 +1,6 @@
 package com.backend.foodweb.firebase;
 
-import com.backend.foodweb.admin.AdminLoginDTO;
+
 import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.backend.foodweb.merchant.FoodItemDTO;
 import com.google.firebase.database.*;
@@ -55,16 +55,6 @@ public class FirebaseService {
         foodItemsRef.setValueAsync(merchant.getFoodItems());
     }
 
-    public void writeToFirebaseAdmin(DataBaseReference dataBaseReference, AdminLoginDTO adminLogin) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference ref = database.getReference(dataBaseReference.toString());
-
-        // Assuming adminLogin.getEmail() returns the email of the admin login
-        DatabaseReference adminLoginRef = ref.child("adminLogins").child(adminLogin.getEmail());
-
-        // Add the entire admin login object as a child node
-        adminLoginRef.setValueAsync(adminLogin);
-    }
 
 
 
