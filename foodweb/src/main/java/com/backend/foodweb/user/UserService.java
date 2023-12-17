@@ -279,6 +279,12 @@ public class UserService {
         firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchantDTO);
     }
 
+    public void updateUser(CreateUserDTO userDTO) {
+        // Implement the logic to update the user in the database.
+        // Assuming you have a method like writeToFirebaseUser, adapt it based on your implementation.
+        firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
+    }
+
 
 }
 

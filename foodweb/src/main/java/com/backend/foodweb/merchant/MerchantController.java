@@ -3,6 +3,7 @@ package com.backend.foodweb.merchant;
 import com.backend.foodweb.JwtUtils;
 import com.backend.foodweb.cart.Order;
 import com.backend.foodweb.firebase.FirebaseService;
+import com.backend.foodweb.user.CreateUserDTO;
 import com.backend.foodweb.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -76,41 +77,47 @@ public class MerchantController {
 
         // Check if merchantDTO is null
         if (merchantDTO == null) {
-            // Handle the case when merchantDTO is null
-            // Log an error or throw an exception, depending on your requirements
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.notFound().build();
         }
 
         // Get the merchant's active orders
         List<Order> activeOrders = merchantDTO.getActiveOrders();
 
-        // Initialize the ready orders list if null
-        if (merchantDTO.getReadyOrders() == null) {
-            merchantDTO.setReadyOrders(new ArrayList<>());
-        }
-
-        // Move the specific order to the ready orders list
-        List<Order> readyOrders = merchantDTO.getReadyOrders();
-
-        // Assuming you have a method to find the order by its ID
-        Order orderToMove = activeOrders.stream()
+        // Find the order in active orders with the specified ID
+        Optional<Order> orderToMove = activeOrders.stream()
                 .filter(order -> order.getOrderId().equals(orderId))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
 
-        if (orderToMove != null) {
-            readyOrders.add(orderToMove);
-            activeOrders.remove(orderToMove);  // Remove the order from active orders
+        if (orderToMove.isPresent()) {
+            // Update the order status to "ready"
+            orderToMove.get().setStatus("ready");
+
+            // Move the order to the ready orders list for the merchant
+            merchantDTO.getReadyOrders().add(orderToMove.get());
+            activeOrders.remove(orderToMove.get());
+
+            // Update the merchant's information in the database
+            userService.updateMerchant(merchantDTO);
+
+            // Retrieve userDTO from the service using the order's user UUID
+            CreateUserDTO userDTO = userService.getUserById(orderToMove.get().getUserUUID());
+
+            if (userDTO != null) {
+                userDTO.markOrderAsReady(orderId);
+                userService.updateUser(userDTO);
+
+                return ResponseEntity.ok().build();
+            } else {
+                // Handle the case where userDTO is null
+                System.out.println("UserDTO is Null");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+
         } else {
-            // Handle the case when the order with the specified ID is not found in active orders
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.notFound().build();
         }
-
-        // Update the merchant's information in the database
-        userService.updateMerchant(merchantDTO);
-
-        return ResponseEntity.ok().build();
     }
+
     @GetMapping("merchant/orders/ready")
     public ResponseEntity<List<Order>> getMerchantReadyOrders(@RequestParam String merchantUuid) {
         // Retrieve merchantDTO from the service
@@ -139,12 +146,14 @@ public class MerchantController {
 
         // Check if merchantDTO is null
         if (merchantDTO == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.notFound().build();
         }
-// Initialize the orderHistory list if null
+
+        // Initialize the orderHistory list if null
         if (merchantDTO.getOrderHistory() == null) {
             merchantDTO.setOrderHistory(new ArrayList<>());
         }
+
         // Get the merchant's ready orders
         List<Order> readyOrders = merchantDTO.getReadyOrders();
 
@@ -154,21 +163,41 @@ public class MerchantController {
                 .findFirst();
 
         if (orderToMove.isPresent()) {
+
+
             // Update the order status to "done"
             orderToMove.get().setStatus("done");
 
-            // Move the order to the order history list
+            // Move the order to the order history list for the merchant
             merchantDTO.getOrderHistory().add(orderToMove.get());
             readyOrders.remove(orderToMove.get());
 
             // Update the merchant's information in the database
             userService.updateMerchant(merchantDTO);
 
-            return ResponseEntity.ok().build();
+            // Retrieve userDTO from the service using the order's user UUID
+            CreateUserDTO userDTO = userService.getUserById(orderToMove.get().getUserUUID());
+
+            if (userDTO != null) {
+                userDTO.moveOrderToHistory(orderId);
+
+                // Update the user's information in the database
+                userService.updateUser(userDTO);
+
+                return ResponseEntity.ok().build();
+            } else {
+                // Handle the case where userDTO is null
+                System.out.println("UserDTO is Null");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.notFound().build();
         }
     }
+
+
+
 
 
     @GetMapping("merchant/orders/history")

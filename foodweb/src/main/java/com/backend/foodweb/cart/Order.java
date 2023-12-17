@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 @Data
 public class Order {
+    private  String userUUID;
     private  String merchantName;
     private String orderId;
     private String BookingId;
@@ -18,4 +19,6 @@ public class Order {
     public void setCartItems(List<CartItemDTO> cartItems) {
         this.orderItems = cartItems;
     }
+
+
 }

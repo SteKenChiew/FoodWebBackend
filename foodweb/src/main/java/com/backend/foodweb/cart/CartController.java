@@ -217,7 +217,7 @@ public class CartController {
         order.setOrderId(orderNumber);
         String bookingId = BookingIdGenerator.generateBookingId();
         order.setBookingId(bookingId);
-
+        order.setUserUUID(uuid);
         // Get the merchant name using the merchantUUID
         String merchantUuid = userDTO.getCart().getMerchantUUID();
         CreateMerchantDTO merchantDTO = userService.getMerchantByUUID(merchantUuid);

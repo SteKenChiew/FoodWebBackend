@@ -32,4 +32,10 @@ public class CreateMerchantDTO {
         }
         return activeOrders;
     }
+    public List<Order> getReadyOrders() {
+        if (readyOrders == null) {
+            readyOrders = new ArrayList<>();
+        }
+        return readyOrders;
+    }
 }

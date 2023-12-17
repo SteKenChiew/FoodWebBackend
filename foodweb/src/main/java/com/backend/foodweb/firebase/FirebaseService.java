@@ -1,5 +1,6 @@
 package com.backend.foodweb.firebase;
 
+import com.backend.foodweb.admin.AdminLoginDTO;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
 import com.backend.foodweb.merchant.FoodItemDTO;
 import com.google.firebase.database.*;
@@ -28,6 +29,14 @@ public class FirebaseService {
         // Set the entire list of cart items under the user's UUID for the cart
         DatabaseReference cartRef = userRef.child("cart");
         cartRef.setValueAsync(user.getCart());
+
+        // Set the entire list of active orders under the user's UUID for active orders
+        DatabaseReference activeOrdersRef = userRef.child("activeOrders");
+        activeOrdersRef.setValueAsync(user.getActiveOrders());
+
+        // Set the entire list of order history under the user's UUID for order history
+        DatabaseReference orderHistoryRef = userRef.child("orderHistory");
+        orderHistoryRef.setValueAsync(user.getOrderHistory());
     }
 
 
@@ -46,6 +55,16 @@ public class FirebaseService {
         foodItemsRef.setValueAsync(merchant.getFoodItems());
     }
 
+    public void writeToFirebaseAdmin(DataBaseReference dataBaseReference, AdminLoginDTO adminLogin) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(dataBaseReference.toString());
+
+        // Assuming adminLogin.getEmail() returns the email of the admin login
+        DatabaseReference adminLoginRef = ref.child("adminLogins").child(adminLogin.getEmail());
+
+        // Add the entire admin login object as a child node
+        adminLoginRef.setValueAsync(adminLogin);
+    }
 
 
 
