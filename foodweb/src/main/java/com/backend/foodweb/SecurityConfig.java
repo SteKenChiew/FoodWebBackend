@@ -56,6 +56,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/restaurants/{uuid}").permitAll()// Allow get restaurant
                 .antMatchers("/api/upload-image").permitAll()
 
+                .antMatchers("/admin/login").permitAll()
+                .antMatchers("/admin/register").permitAll()
+
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable()

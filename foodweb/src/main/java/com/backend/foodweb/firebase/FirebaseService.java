@@ -1,16 +1,15 @@
 package com.backend.foodweb.firebase;
 
 
+import com.backend.foodweb.admin.AdminDTO;
+import com.backend.foodweb.admin.CreateAdminDTO;
 import com.backend.foodweb.merchant.CreateMerchantDTO;
-import com.backend.foodweb.merchant.FoodItemDTO;
 import com.google.firebase.database.*;
 import org.springframework.stereotype.Service;
 import com.backend.foodweb.user.CreateUserDTO;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 @Service
@@ -211,11 +210,39 @@ public class FirebaseService {
         return merchants;
     }
 
-    public void writeToFirebaseUser(DataBaseReference dataBaseReference, CreateUserDTO user) {
-        // update user details
 
+    public void writeToFirebaseAdmin(DataBaseReference dataBaseReference, CreateAdminDTO admin) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(dataBaseReference.toString());
+
+        // Use push to generate a unique key for each admin
+        DatabaseReference adminRef = ref.push();
+
+        // Convert AdminDTO to CreateAdminDTO
+        CreateAdminDTO createAdminDTO = new CreateAdminDTO(admin.getEmail(), admin.getPassword());
+
+        // Add the entire admin object as a child node
+        adminRef.setValueAsync(createAdminDTO);
+
+        // You can add other properties specific to admin if needed
     }
 
+
+    // Modify getAdminByEmail in FirebaseService.java
+    public AdminDTO getAdminByEmail(String email) {
+        System.out.println("Querying for admin email: " + email);
+
+        // Retrieve using CreateAdminDTO
+        CreateAdminDTO createAdminDTO = getObjectByEmail(email, DataBaseReference.ADMIN, CreateAdminDTO.class);
+
+        // Convert CreateAdminDTO to AdminDTO
+        AdminDTO admin = new AdminDTO(createAdminDTO.getEmail(), createAdminDTO.getPassword());
+
+        System.out.println("Retrieved admin after latch: " + admin);
+
+
+        return admin;
+    }
 
 }
 
