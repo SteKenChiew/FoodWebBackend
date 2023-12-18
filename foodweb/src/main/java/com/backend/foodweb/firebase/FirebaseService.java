@@ -219,7 +219,7 @@ public class FirebaseService {
         DatabaseReference adminRef = ref.push();
 
         // Convert AdminDTO to CreateAdminDTO
-        CreateAdminDTO createAdminDTO = new CreateAdminDTO(admin.getEmail(), admin.getPassword());
+        CreateAdminDTO createAdminDTO = new CreateAdminDTO(admin.getEmail(), admin.getPassword(),admin.getUsername(),admin.getId());
 
         // Add the entire admin object as a child node
         adminRef.setValueAsync(createAdminDTO);
@@ -236,13 +236,59 @@ public class FirebaseService {
         CreateAdminDTO createAdminDTO = getObjectByEmail(email, DataBaseReference.ADMIN, CreateAdminDTO.class);
 
         // Convert CreateAdminDTO to AdminDTO
-        AdminDTO admin = new AdminDTO(createAdminDTO.getEmail(), createAdminDTO.getPassword());
+        AdminDTO admin = new AdminDTO(createAdminDTO.getEmail(), createAdminDTO.getPassword(),createAdminDTO.getUsername(),createAdminDTO.getId());
 
         System.out.println("Retrieved admin after latch: " + admin);
 
 
         return admin;
     }
+
+
+    public List<CreateUserDTO> getUserFromFirebase() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(DataBaseReference.USER.toString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final List<CreateUserDTO> users = new ArrayList<>();
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot userSnapshot : dataSnapshot.getChildren()) {
+                        CreateUserDTO user = userSnapshot.getValue(CreateUserDTO.class);
+
+                        if (user != null) {
+                            users.add(user);
+                        }
+                    }
+                }
+
+                latch.countDown();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.err.println("Firebase query error: " + databaseError.getMessage());
+                latch.countDown();
+            }
+        });
+
+        try {
+            if (!latch.await(10, TimeUnit.SECONDS)) {
+                System.err.println("Timeout waiting for Firebase query");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        return users;
+    }
+
+
+
+
 
 }
 

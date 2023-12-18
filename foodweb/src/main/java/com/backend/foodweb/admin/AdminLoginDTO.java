@@ -11,11 +11,5 @@ public class AdminLoginDTO {
     // getters and setters
 
     // constructor
-    public AdminLoginDTO() {}
 
-    // constructor with fields
-    public AdminLoginDTO(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
 }

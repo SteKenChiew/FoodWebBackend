@@ -6,15 +6,16 @@ import lombok.Data;
 public class AdminDTO {
     private String email;
     private String password;
+    private  String username;
+    private  int id;
 
-    // getters and setters
-
-    // constructor
     public AdminDTO() {}
 
     // constructor with fields
-    public AdminDTO(String email, String password) {
+    public AdminDTO(String email, String password, String username, int id) {
         this.email = email;
         this.password = password;
+        this.username = username;
+        this.id = id;
     }
 }

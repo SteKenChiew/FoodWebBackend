@@ -34,7 +34,7 @@ public class AdminService {
         String hashedPassword = BCrypt.hashpw(adminDTO.getPassword(), BCrypt.gensalt());
 
         // Create a new admin with the hashed password
-        CreateAdminDTO createAdminDTO = new CreateAdminDTO(adminDTO.getEmail(), hashedPassword);
+        CreateAdminDTO createAdminDTO = new CreateAdminDTO(adminDTO.getEmail(), hashedPassword,adminDTO.getUsername(),adminDTO.getId());
 
         // Call the writeToFirebaseAdmin method in FirebaseService
         firebaseService.writeToFirebaseAdmin(DataBaseReference.ADMIN, createAdminDTO);
