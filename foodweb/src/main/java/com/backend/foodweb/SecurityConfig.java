@@ -39,6 +39,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/user/orders/active").permitAll()
                 .antMatchers(  "/user/orders/orderhistory").permitAll()
                 .antMatchers(  "/user/update-user").permitAll()
+                .antMatchers(  "/user/delete/{uuid}").permitAll()
 
                 .antMatchers("/merchant/create").permitAll()  // Allow registration
                 .antMatchers("/merchant/login").permitAll()  // Allow login
@@ -55,6 +56,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/restaurants").permitAll()
                 .antMatchers("/restaurants/{uuid}").permitAll()// Allow get restaurant
                 .antMatchers("/api/upload-image").permitAll()
+                .antMatchers( "/merchant/delete/{uuid}").permitAll()
 
                 .antMatchers("/admin/login").permitAll()
                 .antMatchers("/admin/register").permitAll()

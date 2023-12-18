@@ -288,7 +288,27 @@ public class FirebaseService {
 
 
 
+    public void deleteFromFirebase(DataBaseReference dataBaseReference, String uuid) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(dataBaseReference.toString());
 
+        // Assuming uuid is the key of the node you want to delete
+        DatabaseReference nodeRef = ref.child(uuid);
+
+        // Remove the entire node from the database
+        nodeRef.removeValueAsync();
+    }
+
+    public void deleteFromFirebaseMerchant(DataBaseReference dataBaseReference, String uuid) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ref = database.getReference(dataBaseReference.toString());
+
+        // Assuming uuid is the key of the node you want to delete
+        DatabaseReference nodeRef = ref.child(uuid);
+
+        // Remove the entire node from the database
+        nodeRef.removeValueAsync();
+    }
 
 }
 

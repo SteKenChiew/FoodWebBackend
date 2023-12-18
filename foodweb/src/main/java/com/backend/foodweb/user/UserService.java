@@ -284,7 +284,15 @@ public class UserService {
         // Assuming you have a method like writeToFirebaseUser, adapt it based on your implementation.
         firebaseService.writeToFirebase(DataBaseReference.USER, userDTO);
     }
+    public void deleteUser(String userUuid) {
+        // Delete the user based on the UUID
+        firebaseService.deleteFromFirebase(DataBaseReference.USER, userUuid);
+    }
 
+    public void deleteMerchant(String merchantUuid) {
+        // Delete the merchant based on the UUID
+        firebaseService.deleteFromFirebaseMerchant(DataBaseReference.MERCHANT, merchantUuid);
+    }
 
 }
 

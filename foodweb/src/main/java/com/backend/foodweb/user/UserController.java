@@ -472,6 +472,49 @@ public class UserController {
 
         return ResponseEntity.ok(orderHistory);
     }
+    @DeleteMapping("/user/delete/{uuid}")
+    public ResponseEntity<?> deleteUser(@PathVariable String uuid) {
+        try {
+            // Retrieve the user by UUID
+            CreateUserDTO user = userService.getUserById(uuid);
+
+            // Check if the user exists
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+
+            // Delete the user
+            userService.deleteUser(uuid);
+
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
+
+    @DeleteMapping("/merchant/delete/{uuid}")
+    public ResponseEntity<?> deleteMerchant(@PathVariable String uuid) {
+        try {
+            // Retrieve the merchant by UUID
+            CreateMerchantDTO merchant = userService.getMerchantByUUID(uuid);
+
+            // Check if the merchant exists
+            if (merchant == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Merchant not found");
+            }
+
+            // Delete the merchant
+            userService.deleteMerchant(uuid);
+
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
 
 }
 
