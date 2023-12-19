@@ -190,10 +190,10 @@ public class UserController {
             // Update the merchant in the database
             firebaseService.writeToFirebaseMerchant(DataBaseReference.MERCHANT, merchant);
 
-            return ResponseEntity.ok("Item added successfully");
+            return ResponseEntity.ok("{\"message\": \"Item added successfully\"}");
         } catch (Exception e) {
             e.printStackTrace(); // Log the exception details
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Internal server error\"}");
         }
     }
 
